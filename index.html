@@ -501,7 +501,7 @@
   .list-header{ font-size: 10px; text-transform:uppercase; letter-spacing:.06em; color: var(--text-faint); padding-bottom:6px; border-bottom: 1px solid var(--line); margin-bottom: 8px;}
   .list-row{ padding: 6px 0; border-bottom: 1px dashed var(--line); }
   .list-row:last-child{ border-bottom: none; }
-  #via-skills-list .list-row{ cursor: pointer; border-radius: var(--radius); transition: background .15s ease; }
+  #via-skills-list .list-row{ border-radius: var(--radius); transition: background .15s ease; }
   #via-skills-list .list-row.spent{ animation: skillspent .5s ease; }
   @keyframes skillspent{
     0%{ background: rgba(194,160,94,0.28); }
@@ -512,9 +512,17 @@
     border-radius: var(--radius); width: 26px; height: 30px;
   }
   .row-remove:hover{ border-color: var(--danger); color: var(--danger); }
+  .row-use{
+    background: transparent; border: 1px solid var(--line-strong); color: var(--text-dim);
+    border-radius: var(--radius); height: 30px; padding: 0 10px; font-size: 10.5px;
+    text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; cursor: pointer;
+    transition: border-color .15s ease, color .15s ease, opacity .15s ease;
+  }
+  .row-use:hover:not(:disabled){ border-color: var(--steel); color: var(--steel); }
+  .row-use:disabled{ opacity: 0.35; cursor: not-allowed; }
   .grid-armas{ grid-template-columns: 2fr 1fr 1.3fr auto; }
   .grid-armaduras{ grid-template-columns: 2fr 1.3fr 1fr auto; }
-  .grid-via{ grid-template-columns: 1.6fr 0.9fr 1fr 2.2fr auto; }
+  .grid-via{ grid-template-columns: 1.7fr 0.5fr 1fr 2.1fr auto auto; }
   .add-row-btn{
     margin-top: 10px; background: transparent; border: 1px dashed var(--line-strong); color: var(--text-dim);
     border-radius: var(--radius); padding: 8px 12px; font-size: 11px; width: 100%; text-transform: uppercase; letter-spacing: .06em;
@@ -577,12 +585,13 @@
     .grid-armas, .grid-armaduras, .grid-via{ grid-template-columns: 1fr; }
     .list-row{ background: var(--bg-inset); padding: 8px; border-radius: var(--radius); margin-bottom: 8px; border-bottom:none;}
     .row-remove{ width:100%; }
+    .row-use{ width:100%; }
   }
 
   @media print{
     body{ background: #fff; color:#000; }
     body::before{ display:none; }
-    .ghost-btn, .add-row-btn, .row-remove{ display:none; }
+    .ghost-btn, .add-row-btn, .row-remove, .row-use{ display:none; }
   }
 </style>
 </head>
@@ -782,7 +791,7 @@
     <!-- HABILIDADES -->
     <div class="panel stack-full">
       <h2>Habilidades <span class="hint">custo em Fôlego</span></h2>
-      <div class="list-header grid-via"><span>Nome</span><span>Custo</span><span>Ação/Reação</span><span>Efeito</span><span></span></div>
+      <div class="list-header grid-via"><span>Nome</span><span>Custo</span><span>Ação/Reação</span><span>Efeito</span><span></span><span></span></div>
       <div id="via-skills-list"></div>
       <button type="button" class="add-row-btn" id="btn-add-via">+ adicionar habilidade</button>
     </div>
@@ -1410,7 +1419,7 @@
   });
 
   /* ---------- Dynamic list manager ---------- */
-  function createListManager(containerId, gridClass, fieldsConfig, addBtnId, emptyText){
+  function createListManager(containerId, gridClass, fieldsConfig, addBtnId, emptyText, extraButton){
     var container = document.getElementById(containerId);
     function addRow(data){
       data = data || {};
@@ -1429,8 +1438,21 @@
           html += '<input type="text" data-key="' + f.key + '" value="' + escapeHtml(val) + '" placeholder="' + (f.placeholder||"") + '">';
         }
       });
+      if (extraButton){
+        html += '<button type="button" class="row-use">' + extraButton.label + '</button>';
+      }
       html += '<button type="button" class="row-remove" title="Remover">×</button>';
       row.innerHTML = html;
+      if (extraButton){
+        var extraBtn = row.querySelector(".row-use");
+        extraBtn.addEventListener("click", function(){ extraButton.onClick(row); });
+        var acaoSelect = row.querySelector('[data-key="acao"]');
+        if (acaoSelect){
+          var syncExtraBtnState = function(){ extraBtn.disabled = (acaoSelect.value === "Passiva"); };
+          syncExtraBtnState();
+          acaoSelect.addEventListener("change", syncExtraBtnState);
+        }
+      }
       row.querySelector(".row-remove").addEventListener("click", function(){
         row.remove();
         toggleEmptyHint();
@@ -1582,18 +1604,7 @@
     totalEl.innerHTML = "<b>" + total.toLocaleString("pt-BR") + " cinzéis</b> ao todo · equivalente a " + parts.join(", ");
   }
 
-  var viaSkillsList = createListManager("via-skills-list", "grid-via", [
-    { key:"nome", type:"text", placeholder:"Nome da habilidade" },
-    { key:"custo", type:"text", placeholder:"Fôlego" },
-    { key:"acao", type:"select", options:["Ação","Reação","Passiva"] },
-    { key:"efeito", type:"text", placeholder:"Efeito resumido" }
-  ], "btn-add-via", "Nenhuma habilidade registrada.");
-
-  // Clicar numa habilidade não-passiva desconta o custo de Fôlego
-  document.getElementById("via-skills-list").addEventListener("click", function(e){
-    if (e.target.closest("input, select, button")) return;
-    var row = e.target.closest(".list-row");
-    if (!row) return;
+  function spendFolegoForAbility(row){
     var acaoEl = row.querySelector('[data-key="acao"]');
     if (acaoEl && acaoEl.value === "Passiva") return;
     var custoEl = row.querySelector('[data-key="custo"]');
@@ -1609,7 +1620,13 @@
     row.classList.remove("spent");
     void row.offsetWidth;
     row.classList.add("spent");
-  });
+  }
+  var viaSkillsList = createListManager("via-skills-list", "grid-via", [
+    { key:"nome", type:"text", placeholder:"Nome da habilidade" },
+    { key:"custo", type:"text", placeholder:"Fôlego" },
+    { key:"acao", type:"select", options:["Ação","Reação","Passiva"] },
+    { key:"efeito", type:"text", placeholder:"Efeito resumido" }
+  ], "btn-add-via", "Nenhuma habilidade registrada.", { label: "Usar", onClick: spendFolegoForAbility });
 
   /* ---------- Computed displays ---------- */
   function renderComputed(){
