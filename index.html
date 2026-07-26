@@ -1,0 +1,1781 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dossiê do Sintonizado</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #101114;
+    --bg-panel: #1a1c20;
+    --bg-panel-alt: #16181b;
+    --bg-inset: #0d0e10;
+    --line: rgba(224,214,192,0.10);
+    --line-strong: rgba(224,214,192,0.22);
+    --text: #e8e2d2;
+    --text-dim: #948d7a;
+    --text-faint: #5c5748;
+    --rust: #c1602f;
+    --rust-dim: #6e4127;
+    --brass: #c2a05e;
+    --brass-dim: #6f5a34;
+    --crystal-0: #3a161c;
+    --crystal-1: #5c1c28;
+    --crystal-2: #82233a;
+    --crystal-3: #9e1b3d;
+    --crystal-4: #c92642;
+    --crystal-5: #ff4757;
+    --danger: #d1453a;
+    --cherry: #9e1b3d;
+    --cherry-glow: rgba(158,27,61,0.55);
+    --steel: #93b3ba;
+    --steel-dim: #4d6167;
+    --steel-glow: rgba(147,179,186,0.4);
+    --ok: #8a9a7e;
+    --radius: 3px;
+    --font-display: 'Fraunces', serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse 1000px 600px at 12% -12%, rgba(130,35,58,0.16), transparent 58%),
+      radial-gradient(ellipse 800px 550px at 105% 8%, rgba(193,96,47,0.09), transparent 55%),
+      radial-gradient(ellipse 900px 700px at 50% 115%, rgba(75,70,88,0.20), transparent 60%),
+      repeating-linear-gradient(115deg, rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 1px, transparent 1px, transparent 3px);
+    background-attachment: fixed;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 28px 18px 80px;
+    -webkit-font-smoothing: antialiased;
+    position: relative;
+  }
+  body::before{
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.5;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+  }
+  .wrap{ max-width: 1180px; margin: 0 auto; position: relative; z-index: 1; }
+  a{ color: inherit; }
+
+  /* ---------- Ambient effects: dust, chromatic vignette, crack ---------- */
+  :root{ --sat-intensity: 0; }
+  .dust-field{ position: fixed; inset: 0; pointer-events: none; z-index: 3; overflow: hidden; }
+  .dust-mote{
+    position: absolute; bottom: -6px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(233,140,150,0.85), rgba(158,27,61,0.35) 70%, transparent 100%);
+    animation-name: dust-drift; animation-timing-function: linear; animation-iteration-count: infinite;
+  }
+  @keyframes dust-drift{
+    0%{ transform: translate(0, 0); opacity: 0; }
+    8%{ opacity: var(--mote-op, 0.5); }
+    92%{ opacity: var(--mote-op, 0.5); }
+    100%{ transform: translate(var(--mote-x, 40px), -112vh); opacity: 0; }
+  }
+  .chroma-vignette{
+    position: fixed; inset: 0; pointer-events: none; z-index: 2;
+    background: radial-gradient(ellipse 70% 60% at 50% 50%, transparent 45%, rgba(158,27,61, calc(var(--sat-intensity) * 0.5)) 100%);
+    transition: background .9s ease;
+  }
+  .crack-overlay{
+    position: fixed; inset: 0; pointer-events: none; z-index: 4;
+    opacity: 0; transition: opacity .35s ease;
+  }
+  .crack-overlay.active{
+    opacity: 1;
+    animation: cracksnap .16s steps(2, end), crackpulse 2.6s ease-in-out .16s infinite;
+  }
+  .crack-overlay svg{ width: 100%; height: 100%; }
+  .crack-overlay path{
+    stroke: #ff6b7a; stroke-width: 1.1; fill: none; vector-effect: non-scaling-stroke;
+    stroke-linejoin: round; stroke-linecap: round;
+  }
+  @keyframes cracksnap{
+    0%{ opacity: 0; filter: brightness(1); }
+    45%{ opacity: 1; filter: brightness(2.4); }
+    100%{ opacity: 1; filter: brightness(1); }
+  }
+  @keyframes crackpulse{
+    0%,100%{ filter: drop-shadow(0 0 4px rgba(158,27,61,0.6)); }
+    50%{ filter: drop-shadow(0 0 12px rgba(255,71,87,0.9)); }
+  }
+  @keyframes screenshake{
+    0%{ transform: translate(0,0); }
+    10%{ transform: translate(-7px, 3px); }
+    20%{ transform: translate(6px, -5px); }
+    30%{ transform: translate(-6px, 5px); }
+    40%{ transform: translate(7px, -3px); }
+    50%{ transform: translate(-5px, 2px); }
+    60%{ transform: translate(4px, -3px); }
+    70%{ transform: translate(-3px, 2px); }
+    80%{ transform: translate(2px, -1px); }
+    90%{ transform: translate(-1px, 1px); }
+    100%{ transform: translate(0,0); }
+  }
+  .wrap.screen-shake{ animation: screenshake .4s cubic-bezier(.36,.07,.19,.97) both; }
+  @media (prefers-reduced-motion: reduce){
+    .dust-mote{ animation: none; display: none; }
+    .crack-overlay.active{ animation: none; }
+    .wrap.screen-shake{ animation: none; }
+  }
+
+  /* ---------- Utility label style ---------- */
+  .eyebrow{
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  .field-label{
+    display:block;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 4px;
+  }
+  input, select, textarea{
+    background: var(--bg-inset);
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    border-radius: var(--radius);
+    padding: 7px 9px;
+    width: 100%;
+    outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  input:focus, select:focus, textarea:focus{
+    border-color: var(--crystal-3);
+    box-shadow: 0 0 0 3px rgba(158,27,61,0.20);
+  }
+  input::placeholder, textarea::placeholder{ color: var(--text-faint); }
+  textarea{ resize: vertical; min-height: 64px; }
+  select{ appearance: none; -webkit-appearance:none; background-image: linear-gradient(45deg, transparent 50%, var(--text-dim) 50%), linear-gradient(135deg, var(--text-dim) 50%, transparent 50%); background-position: calc(100% - 14px) calc(50% - 2px), calc(100% - 9px) calc(50% - 2px); background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; padding-right: 26px;}
+  button{ font-family: var(--font-mono); cursor: pointer; }
+
+  /* ---------- Header ---------- */
+  header{
+    border-bottom: 1px solid var(--line-strong);
+    padding-bottom: 18px;
+    margin-bottom: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 20px;
+  }
+  .torn-divider{
+    height: 20px;
+    margin: 0 0 22px;
+    background: linear-gradient(180deg, rgba(130,35,58,0.55), rgba(130,35,58,0));
+    clip-path: polygon(
+      0% 0%, 3% 55%, 7% 15%, 11% 65%, 15% 25%, 19% 60%, 23% 10%, 27% 50%,
+      31% 20%, 35% 68%, 39% 30%, 43% 55%, 47% 12%, 51% 62%, 55% 22%, 59% 58%,
+      63% 15%, 67% 50%, 71% 25%, 75% 65%, 79% 18%, 83% 55%, 87% 28%, 91% 60%,
+      95% 20%, 100% 50%, 100% 0%
+    );
+  }
+  .portrait-slot{
+    width: 140px; height: 172px;
+    border: 1px dashed var(--line-strong);
+    border-radius: var(--radius);
+    background: var(--bg-inset);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; position:relative; overflow:hidden; flex-shrink:0;
+    transition: border-color .2s ease, box-shadow .2s ease;
+    box-shadow: 0 0 0 4px rgba(130,35,58,0.08), 0 0 22px -6px rgba(130,35,58,0.4);
+  }
+  .portrait-slot:hover{ border-color: var(--crystal-3); box-shadow: 0 0 0 4px rgba(158,27,61,0.12), 0 0 26px -4px rgba(158,27,61,0.55); }
+  .portrait-slot img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .portrait-placeholder{
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint);
+    text-align:center; padding: 4px; line-height:1.4;
+  }
+  .portrait-remove{
+    position:absolute; top:4px; right:4px; width:20px; height:20px; line-height:1;
+    background: rgba(13,14,16,0.85); border:1px solid var(--line-strong); color: var(--text-dim);
+    border-radius:50%; font-size:12px; padding:0;
+  }
+  .portrait-remove:hover{ border-color: var(--danger); color: var(--danger); }
+  .brand{
+    display:flex; flex-direction: column; gap: 10px;
+  }
+  .brand .tag{
+    font-size: 10.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--rust);
+  }
+  #nome-personagem{
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 34px;
+    color: var(--text);
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--line);
+    padding: 2px 0;
+    width: min(420px, 50vw);
+  }
+  #nome-personagem:focus{ box-shadow:none; border-bottom-color: var(--crystal-3); }
+  .header-meta{
+    display: grid;
+    grid-template-columns: repeat(2, minmax(110px,160px));
+    gap: 10px;
+  }
+  .header-meta .field:nth-child(3){ grid-column: 1 / -1; max-width: 160px; }
+  .header-meta .estagio-badge{
+    grid-column: 1 / -1;
+    font-size: 11px;
+    color: var(--crystal-4);
+    letter-spacing: 0.04em;
+  }
+  .rivet-trigger{
+    position: absolute; top: 12px; right: 12px; width: 8px; height: 8px;
+    transform: translate(50%, -50%);
+    background: transparent; border: none; padding: 0; margin: 0; cursor: pointer; z-index: 3;
+    border-radius: 50%;
+  }
+  .rivet-trigger:hover{ box-shadow: 0 0 4px 1px rgba(158,27,61,0.4); }
+  .secret-modal-backdrop{
+    position: fixed; inset: 0; z-index: 50; background: rgba(5,3,4,0.78);
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .secret-modal-backdrop[hidden]{ display: none; }
+  .secret-modal{
+    background: var(--bg-panel); border: 1px solid var(--crystal-3); border-radius: var(--radius);
+    padding: 26px 30px; display: flex; flex-direction: column; gap: 14px; align-items: center;
+    box-shadow: 0 0 40px -8px rgba(158,27,61,0.65);
+    animation: modalpop .18s ease;
+  }
+  @keyframes modalpop{
+    0%{ transform: scale(.92); opacity: 0; }
+    100%{ transform: scale(1); opacity: 1; }
+  }
+  .secret-modal input{
+    width: 170px; text-align: center; letter-spacing: 2px;
+  }
+  .secret-modal-actions{ display: flex; gap: 10px; }
+  .secret-modal-actions button{
+    font-size: 10.5px; padding: 7px 14px; background: var(--bg-inset); border: 1px solid var(--line-strong);
+    color: var(--text-dim); border-radius: var(--radius); cursor: pointer; text-transform: uppercase; letter-spacing: .05em;
+  }
+  .secret-modal-actions button:hover{ border-color: var(--crystal-3); color: var(--crystal-4); }
+  .secret-modal.shake{ animation: secretshake .3s ease; }
+  @keyframes secretshake{
+    0%,100%{ transform: translateX(0); }
+    25%{ transform: translateX(-6px); }
+    75%{ transform: translateX(6px); }
+  }
+  .corner-stack{
+    display:flex; flex-direction: column; align-items: flex-end; gap: 12px;
+  }
+  .roll-display{
+    flex: 1 1 auto; display:flex; align-items:center; justify-content:center; min-width: 140px;
+  }
+  .roll-box{
+    border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--bg-inset);
+    padding: 10px 20px; text-align:center; min-width: 150px;
+    box-shadow: 0 0 18px -8px rgba(201,38,66,0.0); transition: box-shadow .3s ease;
+  }
+  .roll-box.rolled{ box-shadow: 0 0 18px -6px rgba(201,38,66,0.6); border-color: var(--crystal-3); }
+  .roll-formula{ font-size: 10px; color: var(--text-faint); text-transform:uppercase; letter-spacing:.05em; margin-bottom:2px; }
+  .roll-total{ font-family: var(--font-display); font-weight:600; font-size: 30px; color: var(--crystal-4); line-height:1; text-shadow: 0 0 14px rgba(201,38,66,0.5); }
+  .roll-breakdown{ font-size: 10px; color: var(--text-dim); margin-top:3px; }
+  .status-corner{
+    display:flex; flex-direction: column; align-items: flex-end; gap: 6px; font-size: 10.5px; color: var(--text-faint);
+  }
+  .status-corner .save-status{ min-width: 190px; text-align:right; }
+  .ghost-btn{
+    background: transparent; border: 1px solid var(--line-strong); color: var(--text-dim);
+    border-radius: var(--radius); padding: 5px 10px; font-size: 10.5px; letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  .ghost-btn:hover{ border-color: var(--rust); color: var(--rust); }
+  .ghost-btn.danger:hover{ border-color: var(--danger); color: var(--danger); }
+
+  /* ---------- Nível (canto superior direito) ---------- */
+  .nivel-block{ display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
+  .nivel-block .field-label{ margin-bottom:0; }
+  .nivel-block input{
+    width: 96px; text-align:right; font-family: var(--font-display); font-weight:600; font-size: 40px;
+    background: transparent; border:none; border-bottom: 1px solid var(--line-strong); padding: 2px 0; border-radius:0;
+  }
+  .nivel-block input:focus{ box-shadow:none; border-bottom-color: var(--crystal-3); }
+  @media (max-width: 720px){
+    header{ justify-content:center; }
+    .corner-stack{ align-items:center; width:100%; }
+    .nivel-block{ align-items:center; }
+    .roll-display{ width:100%; }
+  }
+
+  /* ---------- Layout ---------- */
+  .grid-top{
+    display:grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 18px;
+    margin-bottom: 18px;
+  }
+  .stack{ display:flex; flex-direction: column; gap: 18px; }
+  .panel-fill{ flex: 1 0 auto; }
+  .stack-full{ margin-bottom: 18px; }
+
+  .panel{
+    background-color: var(--bg-panel);
+    background-image:
+      linear-gradient(180deg, rgba(255,255,255,0.03), transparent 40px),
+      radial-gradient(circle 1.5px at 11px 11px, var(--line-strong) 99%, transparent 100%),
+      radial-gradient(circle 1.5px at calc(100% - 11px) 11px, var(--line-strong) 99%, transparent 100%),
+      radial-gradient(circle 1.5px at 11px calc(100% - 11px), var(--line-strong) 99%, transparent 100%),
+      radial-gradient(circle 1.5px at calc(100% - 11px) calc(100% - 11px), var(--line-strong) 99%, transparent 100%);
+    background-repeat: no-repeat;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 16px 18px 18px;
+    position: relative;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.02) inset, 0 6px 16px -10px rgba(0,0,0,0.5);
+  }
+  .panel + .panel{ margin-top: 18px; }
+  .panel h2{
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin: 0 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed var(--line);
+    display:flex; justify-content: space-between; align-items:center;
+  }
+  .panel h2 .hint{ text-transform:none; letter-spacing:0; font-size: 10.5px; color: var(--text-faint); }
+
+  .row2{ display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .field{ margin-bottom: 12px; }
+  .field:last-child{ margin-bottom: 0; }
+
+  /* ---------- Resource bars ---------- */
+  .resource .bar-track{
+    height: 9px; border-radius: 5px; background: var(--bg-inset); border: 1px solid var(--line); overflow: hidden; margin-top: 8px;
+    cursor: pointer;
+  }
+  .resource .bar-fill{ height: 100%; border-radius: 5px; transition: width .2s ease; }
+  .resource.vigor .bar-fill{ background: linear-gradient(90deg, var(--rust-dim), var(--rust)); }
+  .resource.folego .bar-fill{ background: linear-gradient(90deg, var(--brass-dim), var(--brass)); }
+  .resource-nums{ display:flex; align-items:center; gap:8px; }
+  .resource-nums input{ text-align:center; }
+  .resource-nums span{ color: var(--text-faint); }
+
+  /* ---------- Saturation gauge (signature element) ---------- */
+  .sat-gauge{ display:flex; flex-direction: row; align-items:center; gap: 5px; margin: 8px 0 10px; }
+  .shard{
+    flex: 1;
+    aspect-ratio: 0.866;
+    min-width: 0;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    background: var(--bg-inset);
+    border: 1px solid var(--line-strong);
+    cursor: pointer;
+    transition: background .15s ease, box-shadow .2s ease, transform .1s ease;
+  }
+  .shard:hover{ transform: translateY(-2px); }
+  .shard.filled{ border-color: transparent; box-shadow: 0 0 9px -1px rgba(201,38,66,0.5); }
+  .shard.pulse{ animation: shardpulse 1.4s ease-in-out infinite; }
+  @keyframes shardpulse{
+    0%,100%{ box-shadow: 0 0 6px 0 rgba(255,71,87,0.4); }
+    50%{ box-shadow: 0 0 14px 3px rgba(255,71,87,0.75); }
+  }
+  .sat-readout{
+    display:flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  }
+  .sat-readout .sat-value{ font-family: var(--font-display); font-size: 22px; color: var(--crystal-4); }
+  .sat-readout .sat-label{ font-size: 12px; color: var(--text); }
+
+  /* ---------- Fadiga ---------- */
+  .fadiga-row{ display:flex; gap: 8px; }
+  .fadiga-btn{
+    flex:1; padding: 10px 0; text-align:center; background: var(--bg-inset); border: 1px solid var(--line-strong);
+    border-radius: var(--radius); color: var(--text-dim); font-size: 13px; transition: background .2s ease, border-color .2s ease, color .2s ease;
+  }
+  .fadiga-btn[data-val="1"].active{ background: rgba(194,160,94,0.16); border-color: var(--brass); color: var(--brass); }
+  .fadiga-btn[data-val="2"].active{ background: rgba(193,96,47,0.18); border-color: var(--rust); color: var(--rust); }
+  .fadiga-btn[data-val="3"].active{
+    background: rgba(158,27,61,0.22); border-color: var(--cherry); color: #ff9fb3;
+    animation: fadigacritical 1.8s ease-in-out infinite;
+  }
+  @keyframes fadigacritical{
+    0%,100%{ box-shadow: 0 0 4px 0 var(--cherry-glow); }
+    50%{ box-shadow: 0 0 12px 2px var(--cherry-glow); }
+  }
+  .resource.vigor.critical-flash{ animation: vigorcritical 1.9s ease-out 2; }
+  @keyframes vigorcritical{
+    0%{ box-shadow: none; }
+    15%{ box-shadow: 0 0 0 6px var(--cherry-glow); }
+    100%{ box-shadow: 0 0 0 0 transparent; }
+  }
+  .resource.vigor.critical-flash .bar-fill{ background: linear-gradient(90deg, var(--cherry), #ff5c7a) !important; }
+
+  /* ---------- Conditions ---------- */
+  .cond-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .cond-item{
+    border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px; background: var(--bg-inset);
+    display:flex; gap: 8px; align-items:flex-start; cursor:pointer;
+  }
+  .cond-item input{ width:auto; margin-top: 2px; accent-color: var(--rust); }
+  .cond-item .cond-label{ font-size: 12px; color: var(--text); }
+  .cond-item .cond-desc{ font-size: 10.5px; color: var(--text-faint); margin-top: 2px; }
+  .cond-item.checked{ border-color: var(--rust); background: rgba(193,96,47,0.08); }
+
+  /* ---------- Attributes ---------- */
+  .attr-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .attr-card{ background: var(--bg-inset); border: 1px solid var(--line); border-radius: var(--radius); padding: 9px 11px; cursor: pointer; transition: border-color .15s ease; }
+  .attr-card:hover{ border-color: var(--crystal-3); }
+  .attr-card .attr-name{ font-size: 12px; color: var(--text); display:flex; justify-content: space-between; align-items:center; margin-bottom: 4px;}
+  .attr-card .attr-name input{ width: 56px; text-align:center; padding: 4px; cursor: text; }
+  .attr-card .attr-desc{ font-size: 10px; color: var(--text-faint); }
+
+  .equipped-weapon-info{ font-size: 11px; color: var(--text-dim); margin-top: 6px; min-height: 14px; }
+  .field-centered{ text-align: center; }
+  .field-centered .field-label{ text-align: center; }
+  .stat-square{
+    width: 68px; height: 68px; margin: 2px auto 0;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--steel); border-radius: var(--radius);
+    background: var(--bg-inset);
+    box-shadow: 0 0 16px -7px var(--steel-glow), inset 0 0 14px -8px var(--steel-glow);
+    font-family: var(--font-display); font-weight: 600; font-size: 30px;
+    color: var(--steel);
+  }
+
+  /* ---------- Coins ---------- */
+  .coin-grid{ display:grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .coin-hint{ text-transform:none; letter-spacing:0; color: var(--text-faint); font-size: 9px; }
+  .coin-total{
+    margin-top: 14px; padding: 10px 14px; background: var(--bg-inset); border: 1px solid var(--line);
+    border-radius: var(--radius); font-size: 12px; color: var(--text-dim);
+  }
+  .coin-total b{ color: var(--text); }
+  @media (max-width: 620px){
+    .coin-grid{ grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ---------- Lists (dynamic rows) ---------- */
+  .list-header, .list-row{ display:grid; gap: 8px; align-items:center; }
+  .list-header{ font-size: 10px; text-transform:uppercase; letter-spacing:.06em; color: var(--text-faint); padding-bottom:6px; border-bottom: 1px solid var(--line); margin-bottom: 8px;}
+  .list-row{ padding: 6px 0; border-bottom: 1px dashed var(--line); }
+  .list-row:last-child{ border-bottom: none; }
+  .row-remove{
+    background: transparent; border: 1px solid var(--line-strong); color: var(--text-faint);
+    border-radius: var(--radius); width: 26px; height: 30px;
+  }
+  .row-remove:hover{ border-color: var(--danger); color: var(--danger); }
+  .grid-armas{ grid-template-columns: 2fr 1fr 1.3fr auto; }
+  .grid-armaduras{ grid-template-columns: 2fr 1.3fr 1fr auto; }
+  .grid-via{ grid-template-columns: 1.6fr 0.9fr 1fr 2.2fr auto; }
+  .add-row-btn{
+    margin-top: 10px; background: transparent; border: 1px dashed var(--line-strong); color: var(--text-dim);
+    border-radius: var(--radius); padding: 8px 12px; font-size: 11px; width: 100%; text-transform: uppercase; letter-spacing: .06em;
+  }
+  .add-row-btn:hover{ border-color: var(--crystal-3); color: var(--crystal-4); }
+  .empty-hint{ font-size: 11px; color: var(--text-faint); font-style: italic; padding: 6px 0; }
+
+  /* ---------- Reference (details) ---------- */
+  details.panel summary{ cursor: pointer; list-style: none; }
+  details.panel summary::-webkit-details-marker{ display:none; }
+  details.panel summary h2::after{ content: '▾'; font-size: 10px; color: var(--text-faint); }
+  details.panel[open] summary h2::after{ content: '▴'; }
+  .ref-table{ width:100%; border-collapse: collapse; font-size: 11.5px; }
+  .ref-table td, .ref-table th{ padding: 6px 8px; border-bottom: 1px solid var(--line); text-align:left; vertical-align: top;}
+  .ref-table th{ color: var(--text-faint); text-transform:uppercase; font-size: 10px; letter-spacing: .05em; }
+
+  /* ---------- Tabs ---------- */
+  .tabs-nav{
+    display:flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--line-strong);
+  }
+  .tab-btn{
+    background: transparent; border:none; color: var(--text-dim); font-family: var(--font-mono);
+    font-size: 11.5px; text-transform:uppercase; letter-spacing:.08em; padding: 10px 18px;
+    border-bottom: 2px solid transparent; margin-bottom:-1px; cursor:pointer;
+  }
+  .tab-btn:hover{ color: var(--text); }
+  .tab-btn.active{ color: var(--crystal-4); border-bottom-color: var(--crystal-3); }
+  [data-tab-panel][hidden]{ display:none; }
+
+  /* ---------- Achievement medals ---------- */
+  .medal-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(96px,1fr)); gap: 12px; }
+  #medal-active-grid{ display:flex; flex-wrap:wrap; justify-content:center; gap:12px; }
+  #medal-active-grid .medal-card{ flex: 0 1 96px; }
+  .medal-card{
+    display:flex; flex-direction:column; align-items:center; gap:8px; padding: 16px 8px;
+    border:1px solid var(--line); border-radius: var(--radius); background: var(--bg-inset); cursor:pointer;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .medal-card:hover{ border-color: var(--line-strong); }
+  .medal-card.active{ border-color: var(--brass); background: rgba(194,160,94,0.10); }
+  .medal-card.readonly{ cursor:default; }
+  .medal-icon{
+    width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    border: 1px solid var(--line-strong); color: var(--text-faint); font-size:17px; flex-shrink:0;
+    transition: box-shadow .2s ease, border-color .2s ease, color .2s ease;
+  }
+  .medal-icon svg{ width:18px; height:18px; }
+  .medal-card.active .medal-icon{ border-color: var(--brass); color: var(--brass); box-shadow: 0 0 10px -2px rgba(194,160,94,0.7); }
+  .medal-label{ font-size: 10.5px; text-align:center; color: var(--text-dim); text-transform:uppercase; letter-spacing:.04em; }
+  .medal-card.active .medal-label{ color: var(--text); }
+
+  footer{ text-align:center; color: var(--text-faint); font-size: 10.5px; margin-top: 30px; letter-spacing: .04em;}
+
+  @media (max-width: 980px){
+    .grid-top{ grid-template-columns: 1fr; }
+    .attr-grid{ grid-template-columns: 1fr; }
+  }
+  @media (max-width: 620px){
+    .header-meta{ grid-template-columns: 1fr 1fr; }
+    .grid-armas, .grid-armaduras, .grid-via{ grid-template-columns: 1fr; }
+    .list-row{ background: var(--bg-inset); padding: 8px; border-radius: var(--radius); margin-bottom: 8px; border-bottom:none;}
+    .row-remove{ width:100%; }
+  }
+
+  @media print{
+    body{ background: #fff; color:#000; }
+    body::before{ display:none; }
+    .ghost-btn, .add-row-btn, .row-remove{ display:none; }
+  }
+</style>
+</head>
+<body>
+<div class="dust-field" id="dust-field" aria-hidden="true"></div>
+<div class="secret-modal-backdrop" id="secret-modal-backdrop" hidden>
+  <div class="secret-modal" id="secret-modal">
+    <input type="password" id="secret-password-input" placeholder="senha" autocomplete="off">
+    <div class="secret-modal-actions">
+      <button type="button" id="secret-confirm-btn">Confirmar</button>
+      <button type="button" id="secret-cancel-btn">Cancelar</button>
+    </div>
+  </div>
+</div>
+<div class="chroma-vignette" id="chroma-vignette" aria-hidden="true"></div>
+<div class="crack-overlay" id="crack-overlay" aria-hidden="true">
+  <svg viewBox="0 0 1000 1000" preserveAspectRatio="none">
+    <path d="M0,40 L35,65 L10,110 L55,130 L25,190 L62,225" />
+    <path d="M35,65 L60,45" />
+    <path d="M10,110 L-6,92" />
+    <path d="M55,130 L92,148 L74,205" />
+    <path d="M0,960 L38,935 L12,890 L58,868 L28,810 L64,778" />
+    <path d="M38,935 L64,955" />
+    <path d="M12,890 L-6,904" />
+    <path d="M58,868 L94,846 L76,790" />
+    <path d="M1000,50 L965,75 L990,120 L945,140 L975,195 L940,230" />
+    <path d="M965,75 L940,54" />
+    <path d="M990,120 L1008,102" />
+    <path d="M945,140 L910,160 L928,215" />
+    <path d="M1000,950 L963,925 L988,880 L942,860 L972,805 L936,772" />
+    <path d="M963,925 L938,946" />
+    <path d="M988,880 L1006,896" />
+    <path d="M942,860 L906,840 L924,786" />
+    <path d="M120,0 L152,44 L108,78 L138,124" />
+    <path d="M152,44 L184,30" />
+    <path d="M880,0 L848,44 L892,78 L862,124" />
+    <path d="M848,44 L816,30" />
+    <path d="M120,1000 L152,956 L108,922 L138,876" />
+    <path d="M880,1000 L848,956 L892,922 L862,876" />
+  </svg>
+</div>
+<div class="wrap">
+
+  <header>
+    <div class="portrait-wrap">
+      <input type="file" id="input-retrato" accept="image/*" hidden>
+      <input type="hidden" id="retrato-value" data-field="retrato" value="">
+      <div class="portrait-slot" id="portrait-slot" title="Adicionar retrato">
+        <img id="portrait-img" alt="Retrato do personagem" hidden>
+        <span class="portrait-placeholder" id="portrait-placeholder">+ retrato</span>
+        <button type="button" class="portrait-remove" id="btn-remove-portrait" title="Remover retrato" hidden>×</button>
+      </div>
+    </div>
+    <div class="brand">
+      <span class="tag">Dossiê do Sintonizado</span>
+      <input id="nome-personagem" data-field="nome" placeholder="Nome do personagem" />
+      <div class="header-meta">
+        <div class="field">
+          <label class="field-label">Arquétipo</label>
+          <select id="sel-arquetipo" data-field="arquetipo"></select>
+        </div>
+        <div class="field">
+          <label class="field-label">Via Principal</label>
+          <select id="sel-via" data-field="via"></select>
+        </div>
+        <div class="field">
+          <label class="field-label">Essência</label>
+          <select id="sel-essencia" data-field="essencia">
+            <option value="Profana">Profana</option>
+          </select>
+        </div>
+        <div class="estagio-badge" id="estagio-badge">
+          <span id="estagio-text">Estágio de Sintonia: —</span>
+          <input type="hidden" id="lore-unlocked" data-field="loreUnlocked">
+        </div>
+      </div>
+    </div>
+    <div class="roll-display" id="roll-display">
+      <div class="roll-box" id="roll-box"></div>
+    </div>
+    <div class="corner-stack">
+      <div class="nivel-block">
+        <label class="field-label">Nível</label>
+        <input type="number" id="input-nivel" data-field="nivel" min="1" max="12" value="1" />
+      </div>
+      <div class="status-corner">
+        <span class="save-status" id="save-status">carregando…</span>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+          <input type="file" id="input-import" accept="application/json,.json" hidden>
+          <button class="ghost-btn" id="btn-import">Importar .json</button>
+          <button class="ghost-btn" id="btn-export">Exportar .json</button>
+          <button class="ghost-btn danger" id="btn-reset">Nova ficha</button>
+        </div>
+      </div>
+    </div>
+  </header>
+  <div class="torn-divider" aria-hidden="true"></div>
+
+  <div class="tabs-nav">
+    <button type="button" class="tab-btn active" data-tab="dossie">Dossiê</button>
+    <button type="button" class="tab-btn" data-tab="inventario">Inventário</button>
+    <button type="button" class="tab-btn" data-tab="conquistas">Conquistas</button>
+  </div>
+
+  <div class="tab-panel" data-tab-panel="dossie">
+    <div class="grid-top">
+      <!-- COLUNA A: RECURSOS / GERENCIAMENTO ATIVO -->
+      <div class="stack">
+        <div class="panel">
+          <button type="button" class="rivet-trigger" id="secret-trigger" aria-label=""></button>
+          <div class="resource vigor">
+            <label class="field-label">Vigor</label>
+            <div class="resource-nums">
+              <input type="number" data-field="vigorAtual" value="6" />
+              <span>/</span>
+              <input type="number" data-field="vigorMax" value="6" />
+            </div>
+            <div class="bar-track"><div class="bar-fill" id="bar-vigor" style="width:100%"></div></div>
+          </div>
+          <div class="resource folego" style="margin-top:14px;">
+            <label class="field-label">Fôlego</label>
+            <div class="resource-nums">
+              <input type="number" data-field="folegoAtual" value="12" />
+              <span>/</span>
+              <input type="number" data-field="folegoMax" value="12" />
+            </div>
+            <div class="bar-track"><div class="bar-fill" id="bar-folego" style="width:100%"></div></div>
+          </div>
+          <div style="margin-top:16px;">
+            <label class="field-label">Fadiga</label>
+            <input type="hidden" id="fadiga-value" data-field="fadiga" value="0">
+            <div class="fadiga-row" id="fadiga-row"></div>
+          </div>
+          <div style="margin-top:16px;">
+            <label class="field-label">Saturação</label>
+            <input type="hidden" id="saturacao-value" data-field="saturacao" value="0">
+            <div class="sat-gauge" id="sat-gauge"></div>
+            <div class="sat-readout">
+              <span class="sat-value" id="sat-value">0</span>
+              <span class="sat-label" id="sat-label">Estável</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Condições</h2>
+          <div class="cond-grid" id="cond-grid"></div>
+        </div>
+      </div>
+
+      <!-- COLUNA B: ATRIBUTOS / COMBATE -->
+      <div class="stack">
+        <div class="panel">
+          <h2>Atributos <span class="hint">geralmente entre −1 e +3</span></h2>
+          <div class="attr-grid" id="attr-grid"></div>
+        </div>
+
+        <div class="panel panel-fill">
+          <h2>Combate e Defesa</h2>
+          <div class="row2">
+            <div class="field field-centered">
+              <label class="field-label">Defesa</label>
+              <div class="stat-square" id="defesa-value">6</div>
+            </div>
+            <div class="field field-centered">
+              <label class="field-label">Reflexo</label>
+              <div class="stat-square" id="reflexo-value">0</div>
+            </div>
+          </div>
+          <div class="field" style="margin-top:12px;">
+            <label class="field-label">Armadura equipada</label>
+            <input type="hidden" id="armadura-equipada-value" data-field="armaduraEquipada" value="">
+            <select id="sel-armadura-equipada"></select>
+            <div class="equipped-weapon-info" id="equipped-armor-info"></div>
+          </div>
+
+          <div style="margin-top:16px;">
+            <label class="field-label">Arma equipada</label>
+            <input type="hidden" id="arma-equipada-value" data-field="armaEquipada" value="">
+            <select id="sel-arma-equipada"></select>
+            <div class="equipped-weapon-info" id="equipped-weapon-info"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel stack-full">
+      <h2>Conquistas</h2>
+      <div class="medal-grid" id="medal-active-grid"></div>
+    </div>
+
+    <!-- HABILIDADES -->
+    <div class="panel stack-full">
+      <h2>Habilidades <span class="hint">custo em Fôlego</span></h2>
+      <div class="list-header grid-via"><span>Nome</span><span>Custo</span><span>Ação/Reação</span><span>Efeito</span><span></span></div>
+      <div id="via-skills-list"></div>
+      <button type="button" class="add-row-btn" id="btn-add-via">+ adicionar habilidade</button>
+    </div>
+
+    <!-- REFERÊNCIA RÁPIDA -->
+    <details class="panel stack-full">
+      <summary><h2>Referência Rápida</h2></summary>
+      <table class="ref-table">
+        <tr><th colspan="2">Ataque desarmado</th></tr>
+        <tr><td>Normal</td><td>2 de dano</td></tr>
+        <tr><td>Bom</td><td>4 de dano</td></tr>
+        <tr><td>Crítico</td><td>6 de dano</td></tr>
+      </table>
+    </details>
+  </div>
+
+  <div class="tab-panel" data-tab-panel="inventario" hidden>
+    <div class="panel">
+      <h2>Inventário &amp; Recursos</h2>
+      <div class="field">
+        <label class="field-label">Itens gerais</label>
+        <textarea data-field="itensGerais" placeholder="Ferramentas, cordas, tochas, provisões…"></textarea>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Moedas <span class="hint">conversão automática</span></h2>
+      <div class="coin-grid">
+        <div class="field">
+          <label class="field-label">Cinzéis</label>
+          <input type="number" data-field="moedaCinzeis" value="0" min="0">
+        </div>
+        <div class="field">
+          <label class="field-label">Chaves <span class="coin-hint">(1 = 6 cinzéis)</span></label>
+          <input type="number" data-field="moedaChaves" value="0" min="0">
+        </div>
+        <div class="field">
+          <label class="field-label">Marcas <span class="coin-hint">(1 = 12 chaves)</span></label>
+          <input type="number" data-field="moedaMarcas" value="0" min="0">
+        </div>
+        <div class="field">
+          <label class="field-label">Pactos <span class="coin-hint">(1 = 24 marcas)</span></label>
+          <input type="number" data-field="moedaPactos" value="0" min="0">
+        </div>
+      </div>
+      <div class="coin-total" id="coin-total"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Armas <span class="hint">disponíveis para equipar no Dossiê</span></h2>
+      <div class="list-header grid-armas"><span>Nome</span><span>Dano</span><span>Tipo</span><span></span></div>
+      <div id="armas-list"></div>
+      <button type="button" class="add-row-btn" id="btn-add-arma">+ adicionar arma</button>
+    </div>
+
+    <div class="panel">
+      <h2>Armaduras <span class="hint">disponíveis para equipar no Dossiê</span></h2>
+      <div class="list-header grid-armaduras"><span>Nome</span><span>Proteção</span><span>Tipo</span><span></span></div>
+      <div id="armaduras-list"></div>
+      <button type="button" class="add-row-btn" id="btn-add-armadura">+ adicionar armadura</button>
+    </div>
+  </div>
+
+  <div class="tab-panel" data-tab-panel="conquistas" hidden>
+    <div class="panel">
+      <h2>Conquistas <span class="hint">clique para ativar/desativar</span></h2>
+      <div class="medal-grid" id="medal-grid"></div>
+    </div>
+  </div>
+
+  <footer>ficha não-oficial · dados salvos automaticamente neste navegador</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var ARCHETYPES = {
+    "Acólito": { vigor: 6, vias: ["Flagelante", "Menestrel"] },
+    "Escrivão": { vigor: 4, vias: ["Cronista", "Inquisitorial"] },
+    "Herborista": { vigor: 4, vias: ["Alquímica", "Barbeira"] },
+    "Legionário": { vigor: 10, vias: ["Cavalaria", "Duelista"] },
+    "Mestre de Bestas": { vigor: 6, vias: ["Entomológica", "Matilheira"] },
+    "Sentinela": { vigor: 8, vias: ["Engenharia", "Precisão"] }
+  };
+
+  var ATTRIBUTES = [
+    ["fisico","Físico","Força bruta, resistência física"],
+    ["destreza","Destreza","Agilidade, furtividade, pontaria"],
+    ["intelecto","Intelecto","Raciocínio, conhecimento, medicina"],
+    ["vontade","Vontade","Autocontrole, resistência mental à infecção"],
+    ["presenca","Presença","Carisma, intimidação, liderança"],
+    ["instinto","Instinto","Percepção, intuição, reflexos"]
+  ];
+
+  var CONDITIONS = [
+    ["desestabilizado","Desestabilizado","Desvantagem em Testes de Ataque e Reflexo."],
+    ["abalado","Abalado","Desvantagem em Testes de Intelecto, Vontade e Presença."],
+    ["atordoado","Atordoado","Sofre Desestabilizado e Abalado ao mesmo tempo."],
+    ["caido","Caído","Movimentação reduzida a Perto. Desvantagem em Testes de Reflexo."],
+    ["sangrando","Sangrando","Perde Vigor a cada rodada."],
+    ["envenenado","Envenenado","Efeito específico do veneno em ação."],
+    ["inconsciente","Inconsciente","Incapaz de agir ou interagir com o ambiente."],
+    ["morrendo","Morrendo","Vigor em 0 — requer estabilização imediata."]
+  ];
+
+  var ACHIEVEMENTS = [
+    ["ach1","Conquista I"],
+    ["ach2","Conquista II"],
+    ["ach3","Conquista III"],
+    ["ach4","Conquista IV"],
+    ["ach5","Conquista V"],
+    ["ach6","Conquista VI"]
+  ];
+
+  var SATURACAO_BANDS = [
+    { max: 0,  label: "Estável",               desc: "Nenhum sintoma agudo presente." },
+    { max: 3,  label: "Ressonância Metálica",   desc: "Metal próximo vibra de forma audível. Penalidade em Destreza (furtividade)." },
+    { max: 6,  label: "Sudorese de Ferro",      desc: "Suor frio, cheiro de ferro, esclera rosada. Penalidade em Físico (resistência)." },
+    { max: 9,  label: "Vozes Sussurrantes",     desc: "Sussurros na mente. Desvantagem em Vontade e Intelecto." },
+    { max: 11, label: "Geometria Fluida",       desc: "Sangue viscoso, padrões em líquidos próximos. Velocidade reduzida, tremores." },
+    { max: 12, label: "Colapso Iminente",       desc: "12 pontos — Teste de Vontade Arriscado contra a Cromatização Completa." }
+  ];
+
+  var ESTAGIOS = [
+    [1,2,"Estágio 1 — Ressonância Latente"],
+    [3,4,"Estágio 2 — Contágio Manifesto"],
+    [5,6,"Estágio 3 — Aceleração Imunológica"],
+    [7,8,"Estágio 4 — Sintonização Profunda"],
+    [9,10,"Estágio 5 — Limiar Terminal"],
+    [11,12,"Estágio Final — Cereja Manifesto"]
+  ];
+
+  function bandFor(v){
+    for (var i=0;i<SATURACAO_BANDS.length;i++){ if (v <= SATURACAO_BANDS[i].max) return SATURACAO_BANDS[i]; }
+    return SATURACAO_BANDS[SATURACAO_BANDS.length-1];
+  }
+  function estagioFor(n){
+    for (var i=0;i<ESTAGIOS.length;i++){ if (n >= ESTAGIOS[i][0] && n <= ESTAGIOS[i][1]) return ESTAGIOS[i][2]; }
+    return "—";
+  }
+  function shardColor(index){
+    var v = index + 1;
+    if (v <= 0) return "var(--crystal-0)";
+    if (v <= 3) return "var(--crystal-1)";
+    if (v <= 6) return "var(--crystal-2)";
+    if (v <= 9) return "var(--crystal-3)";
+    if (v <= 11) return "var(--crystal-4)";
+    return "var(--crystal-5)";
+  }
+  function escapeHtml(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+  function nowTime(){
+    var d = new Date();
+    function pad(n){ return (n<10?"0":"")+n; }
+    return pad(d.getHours())+":"+pad(d.getMinutes());
+  }
+
+  var STORAGE_KEY = "ficha:mina-cromatica";
+  var statusEl = document.getElementById("save-status");
+  function setStatus(msg){ statusEl.textContent = msg; }
+
+  /* ---------- Build static-ish dynamic UI ---------- */
+
+  // Arquétipo / Via selects
+  var selArquetipo = document.getElementById("sel-arquetipo");
+  var selVia = document.getElementById("sel-via");
+  Object.keys(ARCHETYPES).forEach(function(name){
+    var opt = document.createElement("option");
+    opt.value = name; opt.textContent = name;
+    selArquetipo.appendChild(opt);
+  });
+  function populateVias(archetypeName, keepValue){
+    var vias = (ARCHETYPES[archetypeName] || {}).vias || [];
+    var prev = keepValue || selVia.value;
+    selVia.innerHTML = "";
+    vias.forEach(function(v){
+      var opt = document.createElement("option");
+      opt.value = v; opt.textContent = v;
+      selVia.appendChild(opt);
+    });
+    if (vias.indexOf(prev) !== -1) selVia.value = prev;
+  }
+  populateVias(selArquetipo.value);
+
+  // Attributes grid
+  var attrGrid = document.getElementById("attr-grid");
+  var rollBox = document.getElementById("roll-box");
+  function showRoll(label, mod, die, total, fadigaPenalty){
+    var sign = mod > 0 ? ("+" + mod) : (mod < 0 ? String(mod) : "+0");
+    var breakdown = "dado: " + die;
+    if (fadigaPenalty > 0) breakdown += " · fadiga: −" + fadigaPenalty;
+    rollBox.classList.add("rolled");
+    rollBox.innerHTML =
+      '<div class="roll-formula">1d12 ' + sign + ' · ' + label + '</div>' +
+      '<div class="roll-total">' + total + '</div>' +
+      '<div class="roll-breakdown">' + breakdown + '</div>';
+  }
+  function rollAttribute(label, value){
+    var mod = parseInt(value, 10) || 0;
+    var die = 1 + Math.floor(Math.random() * 12);
+    var fadigaPenalty = parseInt((fadigaInput && fadigaInput.value) || "0", 10);
+    var total = die + mod - fadigaPenalty;
+    showRoll(label, mod, die, total, fadigaPenalty);
+  }
+  ATTRIBUTES.forEach(function(a){
+    var card = document.createElement("div");
+    card.className = "attr-card";
+    card.title = "Clique para rolar 1d12 + " + a[1];
+    card.innerHTML =
+      '<div class="attr-name">' + a[1] +
+      '<input type="number" data-field="attr-' + a[0] + '" value="0" min="-1" max="5"></div>' +
+      '<div class="attr-desc">' + a[2] + '</div>';
+    var attrInput = card.querySelector("input");
+    card.addEventListener("click", function(e){
+      if (e.target === attrInput) return;
+      rollAttribute(a[1], attrInput.value);
+    });
+    attrGrid.appendChild(card);
+  });
+
+  // Fadiga selector
+  var fadigaRow = document.getElementById("fadiga-row");
+  var fadigaInput = document.getElementById("fadiga-value");
+  [1,2,3].forEach(function(n){
+    var btn = document.createElement("div");
+    btn.className = "fadiga-btn";
+    btn.textContent = n;
+    btn.dataset.val = n;
+    btn.addEventListener("click", function(){
+      var current = parseInt(fadigaInput.value || "0", 10);
+      fadigaInput.value = (current === n) ? 0 : n;
+      renderFadiga();
+      scheduleSave();
+    });
+    fadigaRow.appendChild(btn);
+  });
+  function renderFadiga(){
+    var val = parseInt(fadigaInput.value || "0", 10);
+    Array.prototype.forEach.call(fadigaRow.children, function(btn){
+      var v = parseInt(btn.dataset.val, 10);
+      btn.classList.toggle("active", v <= val);
+    });
+  }
+
+  // Vigor zerado: reabastece e sobe 1 nível de Fadiga
+  var vigorAtualInput = document.querySelector('[data-field="vigorAtual"]');
+  var vigorMaxInput = document.querySelector('[data-field="vigorMax"]');
+  var lastVigorAtual = parseFloat(vigorAtualInput.value) || 0;
+  function checkVigorZero(){
+    var atual = parseFloat(vigorAtualInput.value);
+    if (isNaN(atual)) atual = 0;
+    if (atual <= 0 && lastVigorAtual > 0){
+      var fadigaVal = parseInt(fadigaInput.value || "0", 10);
+      var vigorBlock = document.querySelector(".resource.vigor");
+      if (fadigaVal >= 3){
+        vigorAtualInput.value = 0;
+        var morrendoCb = document.querySelector('[data-field="cond-morrendo"]');
+        if (morrendoCb && !morrendoCb.checked){
+          morrendoCb.checked = true;
+          var morrendoItem = morrendoCb.closest(".cond-item");
+          if (morrendoItem) morrendoItem.classList.add("checked");
+        }
+        if (vigorBlock){
+          vigorBlock.classList.remove("critical-flash");
+          void vigorBlock.offsetWidth;
+          vigorBlock.classList.add("critical-flash");
+          setTimeout(function(){ vigorBlock.classList.remove("critical-flash"); }, 4000);
+        }
+        scheduleSave();
+      } else {
+        var max = parseFloat(vigorMaxInput.value) || 0;
+        if (max > 0){
+          vigorAtualInput.value = max;
+          fadigaInput.value = Math.min(3, fadigaVal + 1);
+          renderFadiga();
+        }
+      }
+    }
+  }
+  vigorAtualInput.addEventListener("input", checkVigorZero);
+  vigorAtualInput.addEventListener("change", checkVigorZero);
+
+  // Conditions grid
+  var condGrid = document.getElementById("cond-grid");
+  CONDITIONS.forEach(function(c){
+    var item = document.createElement("label");
+    item.className = "cond-item";
+    item.innerHTML =
+      '<input type="checkbox" data-field="cond-' + c[0] + '">' +
+      '<span><span class="cond-label">' + c[1] + '</span>' +
+      '<div class="cond-desc">' + c[2] + '</div></span>';
+    var checkbox = item.querySelector("input");
+    checkbox.addEventListener("change", function(){
+      item.classList.toggle("checked", checkbox.checked);
+      scheduleSave();
+    });
+    condGrid.appendChild(item);
+  });
+
+  // Achievement medals
+  var MEDAL_ICON_SVG = '<svg viewBox="0 0 24 24"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="currentColor"/></svg>';
+  var medalGrid = document.getElementById("medal-grid");
+  var medalActiveGrid = document.getElementById("medal-active-grid");
+
+  function updateActiveMedals(){
+    var actives = ACHIEVEMENTS.filter(function(a){
+      var cb = document.querySelector('[data-field="ach-' + a[0] + '"]');
+      return cb && cb.checked;
+    });
+    medalActiveGrid.innerHTML = "";
+    if (actives.length === 0){
+      var e = document.createElement("div");
+      e.className = "empty-hint";
+      e.textContent = "Nenhuma conquista ativada.";
+      medalActiveGrid.appendChild(e);
+      return;
+    }
+    actives.forEach(function(a){
+      var card = document.createElement("div");
+      card.className = "medal-card active readonly";
+      card.innerHTML = '<div class="medal-icon">' + MEDAL_ICON_SVG + '</div><div class="medal-label">' + a[1] + '</div>';
+      medalActiveGrid.appendChild(card);
+    });
+  }
+
+  ACHIEVEMENTS.forEach(function(a){
+    var card = document.createElement("label");
+    card.className = "medal-card";
+    card.innerHTML =
+      '<input type="checkbox" data-field="ach-' + a[0] + '" hidden>' +
+      '<div class="medal-icon">' + MEDAL_ICON_SVG + '</div>' +
+      '<div class="medal-label">' + a[1] + '</div>';
+    var cb = card.querySelector("input");
+    cb.addEventListener("change", function(){
+      card.classList.toggle("active", cb.checked);
+      updateActiveMedals();
+      scheduleSave();
+    });
+    medalGrid.appendChild(card);
+  });
+  updateActiveMedals();
+
+  // Segredo: efeitos e descrições da Saturação/Estágio só aparecem com a senha certa
+  var loreUnlockedInput = document.getElementById("lore-unlocked");
+  var secretTrigger = document.getElementById("secret-trigger");
+  var secretModalBackdrop = document.getElementById("secret-modal-backdrop");
+  var secretModal = document.getElementById("secret-modal");
+  var secretPasswordInput = document.getElementById("secret-password-input");
+  var secretConfirmBtn = document.getElementById("secret-confirm-btn");
+  var secretCancelBtn = document.getElementById("secret-cancel-btn");
+  function isLoreUnlocked(){ return !!(loreUnlockedInput && loreUnlockedInput.value === "true"); }
+  function updateSecretUI(){
+    var unlocked = isLoreUnlocked();
+    if (secretTrigger) secretTrigger.hidden = unlocked;
+    if (secretModalBackdrop) secretModalBackdrop.hidden = true;
+  }
+  function openSecretModal(){
+    if (isLoreUnlocked() || !secretModalBackdrop) return;
+    secretModalBackdrop.hidden = false;
+    secretPasswordInput.value = "";
+    secretPasswordInput.focus();
+  }
+  function closeSecretModal(){
+    if (secretModalBackdrop) secretModalBackdrop.hidden = true;
+  }
+  if (secretTrigger) secretTrigger.addEventListener("click", openSecretModal);
+  if (secretCancelBtn) secretCancelBtn.addEventListener("click", closeSecretModal);
+  if (secretModalBackdrop){
+    secretModalBackdrop.addEventListener("click", function(e){
+      if (e.target === secretModalBackdrop) closeSecretModal();
+    });
+  }
+  function trySecretPassword(){
+    var val = (secretPasswordInput.value || "").trim().toLowerCase();
+    if (val === "minerva"){
+      loreUnlockedInput.value = "true";
+      updateSecretUI();
+      renderSaturacao();
+      renderComputed();
+      scheduleSave();
+    } else {
+      secretModal.classList.remove("shake");
+      void secretModal.offsetWidth;
+      secretModal.classList.add("shake");
+      secretPasswordInput.value = "";
+      secretPasswordInput.focus();
+    }
+  }
+  if (secretConfirmBtn) secretConfirmBtn.addEventListener("click", trySecretPassword);
+  if (secretPasswordInput){
+    secretPasswordInput.addEventListener("keydown", function(e){
+      if (e.key === "Enter") trySecretPassword();
+      if (e.key === "Escape") closeSecretModal();
+    });
+  }
+
+  // Saturation gauge
+  var satGauge = document.getElementById("sat-gauge");
+  var satHidden = document.getElementById("saturacao-value");
+  for (var i=0;i<12;i++){
+    (function(idx){
+      var shard = document.createElement("div");
+      shard.className = "shard";
+      shard.dataset.index = idx;
+      shard.title = "Definir Saturação para " + (idx+1);
+      shard.addEventListener("click", function(){
+        var current = parseInt(satHidden.value || "0", 10);
+        var newVal = (current === idx + 1) ? idx : idx + 1;
+        satHidden.value = newVal;
+        renderSaturacao();
+        if (newVal === 12 && current !== 12 && isLoreUnlocked()) triggerScreenShake();
+        scheduleSave();
+      });
+      satGauge.appendChild(shard);
+    })(i);
+  }
+  function renderSaturacao(){
+    var val = Math.max(0, Math.min(12, parseInt(satHidden.value || "0", 10)));
+    satHidden.value = val;
+    var band = bandFor(val);
+    var unlocked = isLoreUnlocked();
+    document.getElementById("sat-value").textContent = val;
+    var satLabelEl = document.getElementById("sat-label");
+    satLabelEl.hidden = !unlocked;
+    if (unlocked) satLabelEl.textContent = band.label;
+    Array.prototype.forEach.call(satGauge.children, function(shard, idx){
+      var filled = idx < val;
+      shard.classList.toggle("filled", filled);
+      shard.style.background = filled ? shardColor(idx) : "";
+      shard.classList.toggle("pulse", unlocked && val === 12 && idx === 11);
+    });
+    var crackOverlay = document.getElementById("crack-overlay");
+    if (unlocked){
+      document.documentElement.style.setProperty("--sat-intensity", (val / 12).toFixed(3));
+      if (crackOverlay) crackOverlay.classList.toggle("active", val === 12);
+    } else {
+      document.documentElement.style.setProperty("--sat-intensity", "0");
+      if (crackOverlay) crackOverlay.classList.remove("active");
+    }
+  }
+  function triggerScreenShake(){
+    var wrapEl = document.querySelector(".wrap");
+    if (!wrapEl) return;
+    wrapEl.classList.remove("screen-shake");
+    void wrapEl.offsetWidth;
+    wrapEl.classList.add("screen-shake");
+    setTimeout(function(){ wrapEl.classList.remove("screen-shake"); }, 500);
+  }
+
+  // Poeira cromática ambiente
+  (function initDustField(){
+    var field = document.getElementById("dust-field");
+    if (!field) return;
+    var count = window.matchMedia && window.matchMedia("(max-width: 720px)").matches ? 10 : 20;
+    for (var i = 0; i < count; i++){
+      var mote = document.createElement("div");
+      mote.className = "dust-mote";
+      var size = (1.5 + Math.random() * 2.5).toFixed(1);
+      var left = (Math.random() * 100).toFixed(2);
+      var duration = (22 + Math.random() * 26).toFixed(1);
+      var delay = (-Math.random() * 40).toFixed(1);
+      var drift = Math.round((Math.random() - 0.5) * 120);
+      var op = (0.15 + Math.random() * 0.35).toFixed(2);
+      mote.style.width = size + "px";
+      mote.style.height = size + "px";
+      mote.style.left = left + "%";
+      mote.style.animationDuration = duration + "s";
+      mote.style.animationDelay = delay + "s";
+      mote.style.setProperty("--mote-x", drift + "px");
+      mote.style.setProperty("--mote-op", op);
+      field.appendChild(mote);
+    }
+  })();
+
+  // Arrastar com o botão direito para ajustar Vigor / Fôlego / Saturação
+  function attachDragScrub(el, onScrub){
+    if (!el) return;
+    var dragging = false;
+    el.addEventListener("contextmenu", function(e){ e.preventDefault(); });
+    function handleMove(e){
+      var rect = el.getBoundingClientRect();
+      var ratio = rect.width ? (e.clientX - rect.left) / rect.width : 0;
+      onScrub(Math.max(0, Math.min(1, ratio)));
+    }
+    el.addEventListener("mousedown", function(e){
+      if (e.button !== 2) return;
+      e.preventDefault();
+      dragging = true;
+      handleMove(e);
+    });
+    document.addEventListener("mousemove", function(e){
+      if (!dragging) return;
+      if (!(e.buttons & 2)){ dragging = false; scheduleSave(); return; }
+      handleMove(e);
+    });
+    document.addEventListener("mouseup", function(e){
+      if (!dragging) return;
+      if (e.button === 2){ dragging = false; scheduleSave(); }
+    });
+  }
+  function attachClickToSet(el, onSet){
+    if (!el) return;
+    el.addEventListener("click", function(e){
+      var rect = el.getBoundingClientRect();
+      var ratio = rect.width ? (e.clientX - rect.left) / rect.width : 0;
+      onSet(Math.max(0, Math.min(1, ratio)));
+    });
+  }
+  function scrubVigor(ratio){
+    var maxInput = document.querySelector('[data-field="vigorMax"]');
+    var atualInput = document.querySelector('[data-field="vigorAtual"]');
+    var max = parseFloat(maxInput.value) || 0;
+    atualInput.value = Math.round(ratio * max);
+    checkVigorZero();
+    renderComputed();
+  }
+  function scrubFolego(ratio){
+    var maxInput = document.querySelector('[data-field="folegoMax"]');
+    var atualInput = document.querySelector('[data-field="folegoAtual"]');
+    var max = parseFloat(maxInput.value) || 0;
+    atualInput.value = Math.round(ratio * max);
+    renderComputed();
+  }
+  var vigorTrack = document.getElementById("bar-vigor").parentElement;
+  var folegoTrack = document.getElementById("bar-folego").parentElement;
+  attachDragScrub(vigorTrack, scrubVigor);
+  attachDragScrub(folegoTrack, scrubFolego);
+  attachClickToSet(vigorTrack, function(ratio){ scrubVigor(ratio); scheduleSave(); });
+  attachClickToSet(folegoTrack, function(ratio){ scrubFolego(ratio); scheduleSave(); });
+  attachDragScrub(satGauge, function(ratio){
+    var prevSat = parseInt(satHidden.value || "0", 10);
+    var newSat = Math.round(ratio * 12);
+    satHidden.value = newSat;
+    renderSaturacao();
+    if (newSat === 12 && prevSat !== 12 && isLoreUnlocked()) triggerScreenShake();
+  });
+
+  // Portrait
+  var portraitSlot = document.getElementById("portrait-slot");
+  var portraitInput = document.getElementById("input-retrato");
+  var portraitImg = document.getElementById("portrait-img");
+  var portraitPlaceholder = document.getElementById("portrait-placeholder");
+  var portraitRemoveBtn = document.getElementById("btn-remove-portrait");
+  var portraitHidden = document.getElementById("retrato-value");
+
+  function renderPortrait(){
+    var val = portraitHidden.value;
+    if (val){
+      portraitImg.src = val;
+      portraitImg.hidden = false;
+      portraitPlaceholder.hidden = true;
+      portraitRemoveBtn.hidden = false;
+    } else {
+      portraitImg.hidden = true;
+      portraitImg.removeAttribute("src");
+      portraitPlaceholder.hidden = false;
+      portraitRemoveBtn.hidden = true;
+    }
+  }
+  portraitSlot.addEventListener("click", function(e){
+    if (e.target === portraitRemoveBtn) return;
+    portraitInput.click();
+  });
+  portraitInput.addEventListener("change", function(){
+    var file = portraitInput.files && portraitInput.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      var img = new Image();
+      img.onload = function(){
+        var maxSide = 320;
+        var scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+        var w = Math.max(1, Math.round(img.width * scale));
+        var h = Math.max(1, Math.round(img.height * scale));
+        var canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+        try{
+          portraitHidden.value = canvas.toDataURL("image/jpeg", 0.85);
+        }catch(e){
+          setStatus("não foi possível processar a imagem");
+          return;
+        }
+        renderPortrait();
+        scheduleSave();
+      };
+      img.onerror = function(){ setStatus("não foi possível ler a imagem"); };
+      img.src = ev.target.result;
+    };
+    reader.onerror = function(){ setStatus("não foi possível ler a imagem"); };
+    reader.readAsDataURL(file);
+    portraitInput.value = "";
+  });
+  portraitRemoveBtn.addEventListener("click", function(e){
+    e.stopPropagation();
+    portraitHidden.value = "";
+    renderPortrait();
+    scheduleSave();
+  });
+
+  // Tabs
+  var tabButtons = document.querySelectorAll(".tab-btn");
+  var tabPanels = document.querySelectorAll("[data-tab-panel]");
+  tabButtons.forEach(function(btn){
+    btn.addEventListener("click", function(){
+      tabButtons.forEach(function(b){ b.classList.toggle("active", b === btn); });
+      var name = btn.dataset.tab;
+      tabPanels.forEach(function(p){ p.hidden = (p.dataset.tabPanel !== name); });
+    });
+  });
+
+  /* ---------- Dynamic list manager ---------- */
+  function createListManager(containerId, gridClass, fieldsConfig, addBtnId, emptyText){
+    var container = document.getElementById(containerId);
+    function addRow(data){
+      data = data || {};
+      var row = document.createElement("div");
+      row.className = "list-row " + gridClass;
+      var html = "";
+      fieldsConfig.forEach(function(f){
+        var val = data[f.key] !== undefined ? data[f.key] : "";
+        if (f.type === "select"){
+          html += '<select data-key="' + f.key + '">' + f.options.map(function(o){
+            return '<option value="' + o + '" ' + (o === val ? "selected" : "") + '>' + o + '</option>';
+          }).join("") + '</select>';
+        } else if (f.type === "number"){
+          html += '<input type="number" data-key="' + f.key + '" value="' + escapeHtml(val) + '" placeholder="' + (f.placeholder||"") + '">';
+        } else {
+          html += '<input type="text" data-key="' + f.key + '" value="' + escapeHtml(val) + '" placeholder="' + (f.placeholder||"") + '">';
+        }
+      });
+      html += '<button type="button" class="row-remove" title="Remover">×</button>';
+      row.innerHTML = html;
+      row.querySelector(".row-remove").addEventListener("click", function(){
+        row.remove();
+        toggleEmptyHint();
+        scheduleSave();
+      });
+      row.querySelectorAll("input,select").forEach(function(el){
+        el.addEventListener("input", scheduleSave);
+        el.addEventListener("change", scheduleSave);
+      });
+      container.appendChild(row);
+      toggleEmptyHint();
+    }
+    function toggleEmptyHint(){
+      var hint = container.querySelector(".empty-hint");
+      var hasRows = container.querySelectorAll(".list-row").length > 0;
+      if (!hasRows && !hint){
+        var e = document.createElement("div");
+        e.className = "empty-hint";
+        e.textContent = emptyText;
+        container.appendChild(e);
+      } else if (hasRows && hint){
+        hint.remove();
+      }
+    }
+    function getData(){
+      return Array.prototype.map.call(container.querySelectorAll(".list-row"), function(row){
+        var obj = {};
+        fieldsConfig.forEach(function(f){
+          var el = row.querySelector('[data-key="' + f.key + '"]');
+          obj[f.key] = el ? el.value : "";
+        });
+        return obj;
+      });
+    }
+    function setData(arr){
+      container.innerHTML = "";
+      (arr || []).forEach(function(d){ addRow(d); });
+      toggleEmptyHint();
+    }
+    document.getElementById(addBtnId).addEventListener("click", function(){ addRow({}); scheduleSave(); });
+    toggleEmptyHint();
+    return { addRow: addRow, getData: getData, setData: setData };
+  }
+
+  var armasList = createListManager("armas-list", "grid-armas", [
+    { key:"nome", type:"text", placeholder:"Nome da arma" },
+    { key:"dano", type:"text", placeholder:"ex: 6" },
+    { key:"tipo", type:"select", options:["Corpo a corpo","Distância"] }
+  ], "btn-add-arma", "Nenhuma arma cadastrada.");
+
+  var armadurasList = createListManager("armaduras-list", "grid-armaduras", [
+    { key:"nome", type:"text", placeholder:"Nome da armadura" },
+    { key:"protecao", type:"text", placeholder:"ex: +2 Defesa" },
+    { key:"tipo", type:"select", options:["Leve","Média","Pesada"] }
+  ], "btn-add-armadura", "Nenhuma armadura cadastrada.");
+
+  function findItemByName(items, name){
+    for (var i=0;i<items.length;i++){ if (items[i].nome === name) return items[i]; }
+    return null;
+  }
+
+  // Equipar arma (selecionada a partir do inventário)
+  var armaEquipadaSelect = document.getElementById("sel-arma-equipada");
+  var armaEquipadaHidden = document.getElementById("arma-equipada-value");
+  var equippedInfoEl = document.getElementById("equipped-weapon-info");
+  function renderEquippedInfo(){
+    var weapons = armasList.getData();
+    var match = findItemByName(weapons, armaEquipadaHidden.value);
+    equippedInfoEl.textContent = match ? ("Dano: " + (match.dano || "—") + " · Tipo: " + (match.tipo || "—")) : "";
+  }
+  function refreshArmaEquipada(){
+    var weapons = armasList.getData();
+    var current = armaEquipadaHidden.value;
+    armaEquipadaSelect.innerHTML = '<option value="">— nenhuma —</option>';
+    weapons.forEach(function(w){
+      var opt = document.createElement("option");
+      opt.value = w.nome;
+      opt.textContent = w.nome || "(sem nome)";
+      armaEquipadaSelect.appendChild(opt);
+    });
+    if (findItemByName(weapons, current)){
+      armaEquipadaSelect.value = current;
+    } else {
+      armaEquipadaSelect.value = "";
+      armaEquipadaHidden.value = "";
+    }
+    renderEquippedInfo();
+  }
+  armaEquipadaSelect.addEventListener("change", function(){
+    armaEquipadaHidden.value = armaEquipadaSelect.value;
+    renderEquippedInfo();
+    scheduleSave();
+  });
+
+  // Equipar armadura (selecionada a partir do inventário)
+  var armaduraEquipadaSelect = document.getElementById("sel-armadura-equipada");
+  var armaduraEquipadaHidden = document.getElementById("armadura-equipada-value");
+  var equippedArmorInfoEl = document.getElementById("equipped-armor-info");
+  function renderEquippedArmorInfo(){
+    var armors = armadurasList.getData();
+    var match = findItemByName(armors, armaduraEquipadaHidden.value);
+    equippedArmorInfoEl.textContent = match ? ("Proteção: " + (match.protecao || "—") + " · Tipo: " + (match.tipo || "—")) : "";
+  }
+  function refreshArmaduraEquipada(){
+    var armors = armadurasList.getData();
+    var current = armaduraEquipadaHidden.value;
+    armaduraEquipadaSelect.innerHTML = '<option value="">— nenhuma —</option>';
+    armors.forEach(function(ar){
+      var opt = document.createElement("option");
+      opt.value = ar.nome;
+      opt.textContent = ar.nome || "(sem nome)";
+      armaduraEquipadaSelect.appendChild(opt);
+    });
+    if (findItemByName(armors, current)){
+      armaduraEquipadaSelect.value = current;
+    } else {
+      armaduraEquipadaSelect.value = "";
+      armaduraEquipadaHidden.value = "";
+    }
+    renderEquippedArmorInfo();
+  }
+  armaduraEquipadaSelect.addEventListener("change", function(){
+    armaduraEquipadaHidden.value = armaduraEquipadaSelect.value;
+    renderEquippedArmorInfo();
+    scheduleSave();
+  });
+
+  // Moedas — conversão automática (Cinzel < Chave < Marca < Pacto)
+  var COIN_UNIT_VALUE = { moedaCinzeis: 1, moedaChaves: 6, moedaMarcas: 72, moedaPactos: 1728 };
+  function computeCoinTotal(){
+    var totalEl = document.getElementById("coin-total");
+    if (!totalEl) return;
+    var pactos = parseInt(document.querySelector('[data-field="moedaPactos"]').value, 10) || 0;
+    var marcas = parseInt(document.querySelector('[data-field="moedaMarcas"]').value, 10) || 0;
+    var chaves = parseInt(document.querySelector('[data-field="moedaChaves"]').value, 10) || 0;
+    var cinzeis = parseInt(document.querySelector('[data-field="moedaCinzeis"]').value, 10) || 0;
+    var total = pactos * COIN_UNIT_VALUE.moedaPactos + marcas * COIN_UNIT_VALUE.moedaMarcas +
+                chaves * COIN_UNIT_VALUE.moedaChaves + cinzeis * COIN_UNIT_VALUE.moedaCinzeis;
+    var rest = total;
+    var nPactos = Math.floor(rest / 1728); rest -= nPactos * 1728;
+    var nMarcas = Math.floor(rest / 72); rest -= nMarcas * 72;
+    var nChaves = Math.floor(rest / 6); rest -= nChaves * 6;
+    var nCinzeis = rest;
+    var parts = [];
+    if (nPactos) parts.push(nPactos + (nPactos === 1 ? " pacto" : " pactos"));
+    if (nMarcas) parts.push(nMarcas + (nMarcas === 1 ? " marca" : " marcas"));
+    if (nChaves) parts.push(nChaves + (nChaves === 1 ? " chave" : " chaves"));
+    if (nCinzeis || parts.length === 0) parts.push(nCinzeis + (nCinzeis === 1 ? " cinzel" : " cinzéis"));
+    totalEl.innerHTML = "<b>" + total.toLocaleString("pt-BR") + " cinzéis</b> ao todo · equivalente a " + parts.join(", ");
+  }
+
+  var viaSkillsList = createListManager("via-skills-list", "grid-via", [
+    { key:"nome", type:"text", placeholder:"Nome da habilidade" },
+    { key:"custo", type:"text", placeholder:"Fôlego" },
+    { key:"acao", type:"select", options:["Ação","Reação","Passiva"] },
+    { key:"efeito", type:"text", placeholder:"Efeito resumido" }
+  ], "btn-add-via", "Nenhuma habilidade registrada.");
+
+  /* ---------- Computed displays ---------- */
+  function renderComputed(){
+    var nivel = Math.max(1, Math.min(12, parseInt(document.getElementById("input-nivel").value || "1", 10)));
+    var loreUnlockedNow = isLoreUnlocked();
+    var estagioBadge = document.getElementById("estagio-badge");
+    estagioBadge.hidden = !loreUnlockedNow;
+    if (loreUnlockedNow) document.getElementById("estagio-text").textContent = "Estágio de Sintonia: " + estagioFor(nivel);
+    refreshArmaEquipada();
+    refreshArmaduraEquipada();
+    computeCoinTotal();
+
+    // Reflexo = maior entre Destreza e Instinto
+    var destrezaVal = parseFloat(document.querySelector('[data-field="attr-destreza"]').value) || 0;
+    var instintoVal = parseFloat(document.querySelector('[data-field="attr-instinto"]').value) || 0;
+    document.getElementById("reflexo-value").textContent = Math.max(destrezaVal, instintoVal);
+
+    // Defesa = 6 + Físico (bônus desconsiderado)
+    var fisicoVal = parseFloat(document.querySelector('[data-field="attr-fisico"]').value) || 0;
+    document.getElementById("defesa-value").textContent = 6 + fisicoVal;
+
+    // resource bars
+    var vAtual = parseFloat(document.querySelector('[data-field="vigorAtual"]').value) || 0;
+    var vMax = parseFloat(document.querySelector('[data-field="vigorMax"]').value) || 1;
+    document.getElementById("bar-vigor").style.width = Math.max(0, Math.min(100, (vAtual/vMax)*100)) + "%";
+    var fAtual = parseFloat(document.querySelector('[data-field="folegoAtual"]').value) || 0;
+    var fMax = parseFloat(document.querySelector('[data-field="folegoMax"]').value) || 1;
+    document.getElementById("bar-folego").style.width = Math.max(0, Math.min(100, (fAtual/fMax)*100)) + "%";
+    lastVigorAtual = vAtual;
+  }
+
+  selArquetipo.addEventListener("change", function(){
+    populateVias(selArquetipo.value);
+    renderComputed();
+    scheduleSave();
+  });
+  document.getElementById("input-nivel").addEventListener("input", function(){ renderComputed(); });
+
+  /* ---------- Serialize / Apply full state ---------- */
+  function serialize(){
+    var data = {};
+    document.querySelectorAll("[data-field]").forEach(function(el){
+      var key = el.dataset.field;
+      if (el.type === "checkbox") data[key] = el.checked;
+      else data[key] = el.value;
+    });
+    data._armas = armasList.getData();
+    data._armaduras = armadurasList.getData();
+    data._viaSkills = viaSkillsList.getData();
+    return data;
+  }
+  function apply(data){
+    if (!data) return;
+    if (data.arquetipo) { selArquetipo.value = data.arquetipo; populateVias(data.arquetipo, data.via); }
+    document.querySelectorAll("[data-field]").forEach(function(el){
+      var key = el.dataset.field;
+      if (!(key in data)) return;
+      if (el.type === "checkbox") el.checked = !!data[key];
+      else el.value = data[key];
+    });
+    if (data.via) selVia.value = data.via;
+    armasList.setData(data._armas);
+    armadurasList.setData(data._armaduras);
+    viaSkillsList.setData(data._viaSkills);
+    document.querySelectorAll(".cond-item").forEach(function(item){
+      var cb = item.querySelector("input");
+      item.classList.toggle("checked", cb.checked);
+    });
+    document.querySelectorAll("#medal-grid .medal-card").forEach(function(card){
+      var cb = card.querySelector("input");
+      card.classList.toggle("active", cb.checked);
+    });
+    updateActiveMedals();
+    updateSecretUI();
+    renderFadiga();
+    renderSaturacao();
+    renderPortrait();
+    renderComputed();
+  }
+
+  /* ---------- Storage ---------- */
+  var saveTimer = null;
+  function scheduleSave(){
+    renderComputed();
+    setStatus("salvando…");
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(doSave, 600);
+  }
+  function doSave(){
+    if (!(window.storage && typeof window.storage.set === "function")){
+      setStatus("armazenamento indisponível — alterações não serão salvas");
+      return;
+    }
+    var data = serialize();
+    window.storage.set(STORAGE_KEY, JSON.stringify(data), false).then(function(res){
+      if (res) setStatus("salvo automaticamente · " + nowTime());
+      else setStatus("falha ao salvar");
+    }).catch(function(){
+      setStatus("falha ao salvar — verifique a conexão");
+    });
+  }
+  function doLoad(){
+    if (!(window.storage && typeof window.storage.get === "function")){
+      setStatus("armazenamento indisponível nesta janela");
+      renderFadiga(); renderSaturacao(); renderComputed();
+      return;
+    }
+    window.storage.get(STORAGE_KEY, false).then(function(res){
+      if (res && res.value){
+        try{
+          apply(JSON.parse(res.value));
+          setStatus("ficha carregada");
+        }catch(e){
+          setStatus("ficha nova");
+          renderFadiga(); renderSaturacao(); renderComputed();
+        }
+      } else {
+        setStatus("ficha nova");
+        renderFadiga(); renderSaturacao(); renderComputed();
+      }
+    }).catch(function(){
+      setStatus("ficha nova");
+      renderFadiga(); renderSaturacao(); renderComputed();
+    });
+  }
+
+  // Global listeners for generic [data-field] inputs
+  document.addEventListener("input", function(e){
+    if (e.target.matches("[data-field]")) scheduleSave();
+  });
+  document.addEventListener("change", function(e){
+    if (e.target.matches("[data-field]")) scheduleSave();
+  });
+
+  // Import
+  document.getElementById("btn-import").addEventListener("click", function(){
+    document.getElementById("input-import").click();
+  });
+  document.getElementById("input-import").addEventListener("change", function(){
+    var file = this.files && this.files[0];
+    var inputEl = this;
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      try{
+        var data = JSON.parse(ev.target.result);
+        apply(data);
+        scheduleSave();
+        setStatus("ficha importada de " + file.name);
+      }catch(e){
+        setStatus("arquivo inválido — não foi possível importar");
+      }
+      inputEl.value = "";
+    };
+    reader.onerror = function(){
+      setStatus("não foi possível ler o arquivo");
+      inputEl.value = "";
+    };
+    reader.readAsText(file);
+  });
+
+  // Export
+  document.getElementById("btn-export").addEventListener("click", function(){
+    try{
+      var data = serialize();
+      var blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      var nome = (data.nome || "personagem").toString().trim().replace(/\s+/g,"-").toLowerCase() || "personagem";
+      a.href = url;
+      a.download = "ficha-" + nome + ".json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+    }catch(e){
+      setStatus("não foi possível exportar");
+    }
+  });
+
+  // Reset (two-step confirm, no native dialogs)
+  var resetBtn = document.getElementById("btn-reset");
+  var resetArmed = false;
+  var resetTimer = null;
+  resetBtn.addEventListener("click", function(){
+    if (!resetArmed){
+      resetArmed = true;
+      resetBtn.textContent = "Confirmar reset?";
+      resetTimer = setTimeout(function(){
+        resetArmed = false;
+        resetBtn.textContent = "Nova ficha";
+      }, 3000);
+      return;
+    }
+    clearTimeout(resetTimer);
+    resetArmed = false;
+    resetBtn.textContent = "Nova ficha";
+    document.querySelectorAll("[data-field]").forEach(function(el){
+      if (el.type === "checkbox") el.checked = false;
+      else if (el.tagName === "SELECT") el.selectedIndex = 0;
+      else el.value = "";
+    });
+    document.getElementById("input-nivel").value = 1;
+    document.querySelector('[data-field="vigorAtual"]').value = 6;
+    document.querySelector('[data-field="vigorMax"]').value = 6;
+    document.querySelector('[data-field="folegoAtual"]').value = 12;
+    document.querySelector('[data-field="folegoMax"]').value = 12;
+    document.getElementById("saturacao-value").value = 0;
+    document.getElementById("fadiga-value").value = 0;
+    populateVias(selArquetipo.value);
+    armasList.setData([]);
+    armadurasList.setData([]);
+    viaSkillsList.setData([]);
+    document.querySelectorAll(".cond-item").forEach(function(item){ item.classList.remove("checked"); });
+    document.querySelectorAll("#medal-grid .medal-card").forEach(function(card){ card.classList.remove("active"); });
+    updateActiveMedals();
+    updateSecretUI();
+    portraitHidden.value = "";
+    renderPortrait();
+    renderFadiga(); renderSaturacao(); renderComputed();
+    if (window.storage && typeof window.storage.set === "function"){
+      window.storage.set(STORAGE_KEY, JSON.stringify(serialize()), false).then(function(){
+        setStatus("ficha reiniciada");
+      }).catch(function(){ setStatus("ficha reiniciada (não salva)"); });
+    }
+  });
+
+  // Init
+  updateSecretUI();
+  renderFadiga();
+  renderSaturacao();
+  renderPortrait();
+  renderComputed();
+  doLoad();
+})();
+</script>
+</body>
+</html>
