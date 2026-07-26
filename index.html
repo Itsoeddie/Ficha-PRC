@@ -89,6 +89,24 @@
     background: radial-gradient(ellipse 70% 60% at 50% 50%, transparent 45%, rgba(158,27,61, calc(var(--sat-intensity) * 0.5)) 100%);
     transition: background .9s ease;
   }
+  .condition-vignette{
+    position: fixed; inset: 0; pointer-events: none; z-index: 2; opacity: 0; transition: opacity .7s ease;
+  }
+  .poison-vignette{
+    background: radial-gradient(ellipse 70% 60% at 50% 50%, transparent 45%, rgba(150,205,60,0.22) 100%);
+  }
+  .poison-vignette.active{ opacity: 1; }
+  .bleed-vignette{
+    background: radial-gradient(ellipse 70% 60% at 50% 50%, transparent 40%, rgba(120,8,20,0.4) 100%);
+  }
+  .bleed-vignette.active{ opacity: 1; animation: bleedpulse 1.8s ease-in-out infinite; }
+  @keyframes bleedpulse{
+    0%,100%{ opacity: 0.45; }
+    50%{ opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .bleed-vignette.active{ animation: none; opacity: .75; }
+  }
   .crack-overlay{
     position: fixed; inset: 0; pointer-events: none; z-index: 4;
     opacity: 0; transition: opacity .35s ease;
@@ -202,6 +220,7 @@
   }
   .portrait-slot:hover{ border-color: var(--crystal-3); box-shadow: 0 0 0 4px rgba(158,27,61,0.12), 0 0 26px -4px rgba(158,27,61,0.55); }
   .portrait-slot img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .portrait-slot img[hidden]{ display:none; }
   .portrait-placeholder{
     font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint);
     text-align:center; padding: 4px; line-height:1.4;
@@ -287,10 +306,17 @@
   }
   .roll-box{
     border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--bg-inset);
-    padding: 10px 20px; text-align:center; min-width: 150px;
+    padding: 8px 20px 12px; text-align:center; width: 160px;
     box-shadow: 0 0 18px -8px rgba(201,38,66,0.0); transition: box-shadow .3s ease;
+    display: flex; flex-direction: column; align-items: center;
   }
   .roll-box.rolled{ box-shadow: 0 0 18px -6px rgba(201,38,66,0.6); border-color: var(--crystal-3); }
+  .roll-frame-label{
+    font-size: 9px; text-transform: uppercase; letter-spacing: .16em; color: var(--text-faint);
+    padding-bottom: 6px; margin-bottom: 8px; border-bottom: 1px dashed var(--line); width: 100%;
+  }
+  .roll-result{ min-height: 52px; width: 100%; display:flex; flex-direction:column; justify-content:center; }
+  .roll-empty-hint{ font-size: 18px; color: var(--text-faint); line-height:1; }
   .roll-formula{ font-size: 10px; color: var(--text-faint); text-transform:uppercase; letter-spacing:.05em; margin-bottom:2px; }
   .roll-total{ font-family: var(--font-display); font-weight:600; font-size: 30px; color: var(--crystal-4); line-height:1; text-shadow: 0 0 14px rgba(201,38,66,0.5); }
   .roll-breakdown{ font-size: 10px; color: var(--text-dim); margin-top:3px; }
@@ -475,6 +501,12 @@
   .list-header{ font-size: 10px; text-transform:uppercase; letter-spacing:.06em; color: var(--text-faint); padding-bottom:6px; border-bottom: 1px solid var(--line); margin-bottom: 8px;}
   .list-row{ padding: 6px 0; border-bottom: 1px dashed var(--line); }
   .list-row:last-child{ border-bottom: none; }
+  #via-skills-list .list-row{ cursor: pointer; border-radius: var(--radius); transition: background .15s ease; }
+  #via-skills-list .list-row.spent{ animation: skillspent .5s ease; }
+  @keyframes skillspent{
+    0%{ background: rgba(194,160,94,0.28); }
+    100%{ background: transparent; }
+  }
   .row-remove{
     background: transparent; border: 1px solid var(--line-strong); color: var(--text-faint);
     border-radius: var(--radius); width: 26px; height: 30px;
@@ -566,6 +598,8 @@
   </div>
 </div>
 <div class="chroma-vignette" id="chroma-vignette" aria-hidden="true"></div>
+<div class="condition-vignette poison-vignette" id="poison-vignette" aria-hidden="true"></div>
+<div class="condition-vignette bleed-vignette" id="bleed-vignette" aria-hidden="true"></div>
 <div class="crack-overlay" id="crack-overlay" aria-hidden="true">
   <svg viewBox="0 0 1000 1000" preserveAspectRatio="none">
     <path d="M0,40 L35,65 L10,110 L55,130 L25,190 L62,225" />
@@ -629,7 +663,10 @@
       </div>
     </div>
     <div class="roll-display" id="roll-display">
-      <div class="roll-box" id="roll-box"></div>
+      <div class="roll-box" id="roll-box">
+        <div class="roll-frame-label">Dados</div>
+        <div class="roll-result" id="roll-result"><span class="roll-empty-hint">—</span></div>
+      </div>
     </div>
     <div class="corner-stack">
       <div class="nivel-block">
@@ -937,12 +974,13 @@
   // Attributes grid
   var attrGrid = document.getElementById("attr-grid");
   var rollBox = document.getElementById("roll-box");
+  var rollResult = document.getElementById("roll-result");
   function showRoll(label, mod, die, total, fadigaPenalty){
     var sign = mod > 0 ? ("+" + mod) : (mod < 0 ? String(mod) : "+0");
     var breakdown = "dado: " + die;
     if (fadigaPenalty > 0) breakdown += " · fadiga: −" + fadigaPenalty;
     rollBox.classList.add("rolled");
-    rollBox.innerHTML =
+    rollResult.innerHTML =
       '<div class="roll-formula">1d12 ' + sign + ' · ' + label + '</div>' +
       '<div class="roll-total">' + total + '</div>' +
       '<div class="roll-breakdown">' + breakdown + '</div>';
@@ -1034,6 +1072,14 @@
 
   // Conditions grid
   var condGrid = document.getElementById("cond-grid");
+  function updateConditionVignettes(){
+    var poisonEl = document.getElementById("poison-vignette");
+    var bleedEl = document.getElementById("bleed-vignette");
+    var poisonCb = document.querySelector('[data-field="cond-envenenado"]');
+    var bleedCb = document.querySelector('[data-field="cond-sangrando"]');
+    if (poisonEl) poisonEl.classList.toggle("active", !!(poisonCb && poisonCb.checked));
+    if (bleedEl) bleedEl.classList.toggle("active", !!(bleedCb && bleedCb.checked));
+  }
   CONDITIONS.forEach(function(c){
     var item = document.createElement("label");
     item.className = "cond-item";
@@ -1044,6 +1090,7 @@
     var checkbox = item.querySelector("input");
     checkbox.addEventListener("change", function(){
       item.classList.toggle("checked", checkbox.checked);
+      updateConditionVignettes();
       scheduleSave();
     });
     condGrid.appendChild(item);
@@ -1542,6 +1589,28 @@
     { key:"efeito", type:"text", placeholder:"Efeito resumido" }
   ], "btn-add-via", "Nenhuma habilidade registrada.");
 
+  // Clicar numa habilidade não-passiva desconta o custo de Fôlego
+  document.getElementById("via-skills-list").addEventListener("click", function(e){
+    if (e.target.closest("input, select, button")) return;
+    var row = e.target.closest(".list-row");
+    if (!row) return;
+    var acaoEl = row.querySelector('[data-key="acao"]');
+    if (acaoEl && acaoEl.value === "Passiva") return;
+    var custoEl = row.querySelector('[data-key="custo"]');
+    var match = custoEl ? String(custoEl.value || "").match(/-?\d+(\.\d+)?/) : null;
+    if (!match) return;
+    var custo = parseFloat(match[0]);
+    if (isNaN(custo) || custo <= 0) return;
+    var folegoInput = document.querySelector('[data-field="folegoAtual"]');
+    var atual = parseFloat(folegoInput.value) || 0;
+    folegoInput.value = Math.max(0, atual - custo);
+    renderComputed();
+    scheduleSave();
+    row.classList.remove("spent");
+    void row.offsetWidth;
+    row.classList.add("spent");
+  });
+
   /* ---------- Computed displays ---------- */
   function renderComputed(){
     var nivel = Math.max(1, Math.min(12, parseInt(document.getElementById("input-nivel").value || "1", 10)));
@@ -1609,6 +1678,7 @@
       var cb = item.querySelector("input");
       item.classList.toggle("checked", cb.checked);
     });
+    updateConditionVignettes();
     document.querySelectorAll("#medal-grid .medal-card").forEach(function(card){
       var cb = card.querySelector("input");
       card.classList.toggle("active", cb.checked);
@@ -1629,42 +1699,60 @@
     clearTimeout(saveTimer);
     saveTimer = setTimeout(doSave, 600);
   }
+
   function doSave(){
-    if (!(window.storage && typeof window.storage.set === "function")){
-      setStatus("armazenamento indisponível — alterações não serão salvas");
-      return;
-    }
     var data = serialize();
-    window.storage.set(STORAGE_KEY, JSON.stringify(data), false).then(function(res){
-      if (res) setStatus("salvo automaticamente · " + nowTime());
-      else setStatus("falha ao salvar");
-    }).catch(function(){
-      setStatus("falha ao salvar — verifique a conexão");
-    });
-  }
-  function doLoad(){
-    if (!(window.storage && typeof window.storage.get === "function")){
-      setStatus("armazenamento indisponível nesta janela");
-      renderFadiga(); renderSaturacao(); renderComputed();
+    if (window.storage && typeof window.storage.set === "function"){
+      window.storage.set(STORAGE_KEY, JSON.stringify(data), false).then(function(res){
+        if (res) setStatus("salvo automaticamente · " + nowTime());
+        else setStatus("falha ao salvar");
+      }).catch(function(){
+        setStatus("falha ao salvar — verifique a conexão");
+      });
       return;
     }
-    window.storage.get(STORAGE_KEY, false).then(function(res){
-      if (res && res.value){
-        try{
-          apply(JSON.parse(res.value));
-          setStatus("ficha carregada");
-        }catch(e){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      setStatus("salvo automaticamente (neste navegador) · " + nowTime());
+    }catch(e){
+      setStatus("armazenamento indisponível — alterações não serão salvas");
+    }
+  }
+
+  function doLoad(){
+    if (window.storage && typeof window.storage.get === "function"){
+      window.storage.get(STORAGE_KEY, false).then(function(res){
+        if (res && res.value){
+          try{
+            apply(JSON.parse(res.value));
+            setStatus("ficha carregada");
+          }catch(e){
+            setStatus("ficha nova");
+            renderFadiga(); renderSaturacao(); renderComputed();
+          }
+        } else {
           setStatus("ficha nova");
           renderFadiga(); renderSaturacao(); renderComputed();
         }
+      }).catch(function(){
+        setStatus("ficha nova");
+        renderFadiga(); renderSaturacao(); renderComputed();
+      });
+      return;
+    }
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw){
+        apply(JSON.parse(raw));
+        setStatus("ficha carregada (deste navegador)");
       } else {
         setStatus("ficha nova");
         renderFadiga(); renderSaturacao(); renderComputed();
       }
-    }).catch(function(){
-      setStatus("ficha nova");
+    }catch(e){
+      setStatus("armazenamento indisponível nesta janela");
       renderFadiga(); renderSaturacao(); renderComputed();
-    });
+    }
   }
 
   // Global listeners for generic [data-field] inputs
@@ -1755,6 +1843,7 @@
     armadurasList.setData([]);
     viaSkillsList.setData([]);
     document.querySelectorAll(".cond-item").forEach(function(item){ item.classList.remove("checked"); });
+    updateConditionVignettes();
     document.querySelectorAll("#medal-grid .medal-card").forEach(function(card){ card.classList.remove("active"); });
     updateActiveMedals();
     updateSecretUI();
@@ -1770,6 +1859,7 @@
 
   // Init
   updateSecretUI();
+  updateConditionVignettes();
   renderFadiga();
   renderSaturacao();
   renderPortrait();
