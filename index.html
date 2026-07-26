@@ -107,6 +107,16 @@
   @media (prefers-reduced-motion: reduce){
     .bleed-vignette.active{ animation: none; opacity: .75; }
   }
+  .dying-overlay{
+    position: fixed; inset: 0; pointer-events: none; z-index: 5; opacity: 0;
+    background: radial-gradient(ellipse 60% 55% at 50% 50%, transparent 15%, rgba(0,0,0,0.85) 100%);
+    transition: opacity 1.2s ease;
+  }
+  .dying-overlay.active{ opacity: 1; animation: dyingpulse 4.5s ease-in-out infinite; }
+  @keyframes dyingpulse{
+    0%,100%{ opacity: 0.5; }
+    50%{ opacity: 0.95; }
+  }
   .crack-overlay{
     position: fixed; inset: 0; pointer-events: none; z-index: 4;
     opacity: 0; transition: opacity .35s ease;
@@ -143,10 +153,42 @@
     100%{ transform: translate(0,0); }
   }
   .wrap.screen-shake{ animation: screenshake .4s cubic-bezier(.36,.07,.19,.97) both; }
+  @keyframes screenshakeintense{
+    0%{ transform: translate(0,0); }
+    10%{ transform: translate(-12px, 6px); }
+    20%{ transform: translate(11px, -9px); }
+    30%{ transform: translate(-11px, 9px); }
+    40%{ transform: translate(12px, -6px); }
+    50%{ transform: translate(-9px, 5px); }
+    60%{ transform: translate(8px, -6px); }
+    70%{ transform: translate(-6px, 4px); }
+    80%{ transform: translate(4px, -2px); }
+    90%{ transform: translate(-2px, 1px); }
+    100%{ transform: translate(0,0); }
+  }
+  .wrap.screen-shake-intense{ animation: screenshakeintense .55s cubic-bezier(.36,.07,.19,.97) both; }
+  .flicker-overlay{
+    position: fixed; inset: 0; pointer-events: none; z-index: 6;
+    background: rgba(8,7,8,0.6); opacity: 0;
+  }
+  .flicker-overlay.flicker{ animation: flickeranim .4s steps(2, end); }
+  .flicker-overlay.flicker-intense{ animation: flickerintense .5s steps(2, end); }
+  @keyframes flickeranim{
+    0%{ opacity: 0; } 20%{ opacity: 0.55; } 40%{ opacity: 0.05; }
+    60%{ opacity: 0.45; } 80%{ opacity: 0.05; } 100%{ opacity: 0; }
+  }
+  @keyframes flickerintense{
+    0%{ opacity: 0; } 12%{ opacity: 0.85; } 25%{ opacity: 0.05; }
+    38%{ opacity: 0.8; } 50%{ opacity: 0.05; } 65%{ opacity: 0.7; }
+    80%{ opacity: 0.05; } 100%{ opacity: 0; }
+  }
   @media (prefers-reduced-motion: reduce){
     .dust-mote{ animation: none; display: none; }
     .crack-overlay.active{ animation: none; }
     .wrap.screen-shake{ animation: none; }
+    .wrap.screen-shake-intense{ animation: none; }
+    .flicker-overlay.flicker, .flicker-overlay.flicker-intense{ animation: none; opacity: 0; }
+    .dying-overlay.active{ animation: none; opacity: .7; }
   }
 
   /* ---------- Utility label style ---------- */
@@ -609,6 +651,8 @@
 <div class="chroma-vignette" id="chroma-vignette" aria-hidden="true"></div>
 <div class="condition-vignette poison-vignette" id="poison-vignette" aria-hidden="true"></div>
 <div class="condition-vignette bleed-vignette" id="bleed-vignette" aria-hidden="true"></div>
+<div class="dying-overlay" id="dying-overlay" aria-hidden="true"></div>
+<div class="flicker-overlay" id="flicker-overlay" aria-hidden="true"></div>
 <div class="crack-overlay" id="crack-overlay" aria-hidden="true">
   <svg viewBox="0 0 1000 1000" preserveAspectRatio="none">
     <path d="M0,40 L35,65 L10,110 L55,130 L25,190 L62,225" />
@@ -882,7 +926,7 @@
     ["fisico","Físico","Força bruta, resistência física"],
     ["destreza","Destreza","Agilidade, furtividade, pontaria"],
     ["intelecto","Intelecto","Raciocínio, conhecimento, medicina"],
-    ["vontade","Vontade","Autocontrole, resistência mental "],
+    ["vontade","Vontade","Autocontrole, resistência mental à infecção"],
     ["presenca","Presença","Carisma, intimidação, liderança"],
     ["instinto","Instinto","Percepção, intuição, reflexos"]
   ];
@@ -1058,6 +1102,7 @@
           morrendoCb.checked = true;
           var morrendoItem = morrendoCb.closest(".cond-item");
           if (morrendoItem) morrendoItem.classList.add("checked");
+          refreshConditionEffects();
         }
         if (vigorBlock){
           vigorBlock.classList.remove("critical-flash");
@@ -1081,14 +1126,69 @@
 
   // Conditions grid
   var condGrid = document.getElementById("cond-grid");
-  function updateConditionVignettes(){
+  var flickerOverlay = document.getElementById("flicker-overlay");
+  var flickerTimer = null;
+  function triggerFlicker(intense){
+    if (flickerOverlay){
+      flickerOverlay.classList.remove("flicker", "flicker-intense");
+      void flickerOverlay.offsetWidth;
+      flickerOverlay.classList.add(intense ? "flicker-intense" : "flicker");
+    }
+    var wrapEl = document.querySelector(".wrap");
+    if (wrapEl){
+      wrapEl.classList.remove("screen-shake", "screen-shake-intense");
+      void wrapEl.offsetWidth;
+      wrapEl.classList.add(intense ? "screen-shake-intense" : "screen-shake");
+      setTimeout(function(){ wrapEl.classList.remove("screen-shake", "screen-shake-intense"); }, 650);
+    }
+  }
+  function stopFlickerLoop(){
+    clearTimeout(flickerTimer);
+    flickerTimer = null;
+  }
+  function runFlickerLoop(){
+    var abaladoCb = document.querySelector('[data-field="cond-abalado"]');
+    var atordoadoCb = document.querySelector('[data-field="cond-atordoado"]');
+    var atordoadoActive = !!(atordoadoCb && atordoadoCb.checked);
+    var abaladoActive = !!(abaladoCb && abaladoCb.checked);
+    if (!atordoadoActive && !abaladoActive){ stopFlickerLoop(); return; }
+    var intense = atordoadoActive;
+    var delay = intense ? (2200 + Math.random() * 2600) : (4500 + Math.random() * 5000);
+    flickerTimer = setTimeout(function(){
+      triggerFlicker(intense);
+      runFlickerLoop();
+    }, delay);
+  }
+  function updateShakeLoops(){
+    stopFlickerLoop();
+    runFlickerLoop();
+  }
+  function refreshConditionEffects(){
     var poisonEl = document.getElementById("poison-vignette");
     var bleedEl = document.getElementById("bleed-vignette");
+    var dyingEl = document.getElementById("dying-overlay");
     var poisonCb = document.querySelector('[data-field="cond-envenenado"]');
     var bleedCb = document.querySelector('[data-field="cond-sangrando"]');
+    var morrendoCb = document.querySelector('[data-field="cond-morrendo"]');
     if (poisonEl) poisonEl.classList.toggle("active", !!(poisonCb && poisonCb.checked));
     if (bleedEl) bleedEl.classList.toggle("active", !!(bleedCb && bleedCb.checked));
+    if (dyingEl) dyingEl.classList.toggle("active", !!(morrendoCb && morrendoCb.checked));
+    updateShakeLoops();
   }
+  function checkVigorRecovery(){
+    var atual = parseFloat(vigorAtualInput.value) || 0;
+    if (atual > 0){
+      var morrendoCb = document.querySelector('[data-field="cond-morrendo"]');
+      if (morrendoCb && morrendoCb.checked){
+        morrendoCb.checked = false;
+        var item = morrendoCb.closest(".cond-item");
+        if (item) item.classList.remove("checked");
+        refreshConditionEffects();
+      }
+    }
+  }
+  vigorAtualInput.addEventListener("input", checkVigorRecovery);
+  vigorAtualInput.addEventListener("change", checkVigorRecovery);
   CONDITIONS.forEach(function(c){
     var item = document.createElement("label");
     item.className = "cond-item";
@@ -1099,7 +1199,14 @@
     var checkbox = item.querySelector("input");
     checkbox.addEventListener("change", function(){
       item.classList.toggle("checked", checkbox.checked);
-      updateConditionVignettes();
+      if (c[0] === "morrendo" && !checkbox.checked){
+        var vigorAtualEl = document.querySelector('[data-field="vigorAtual"]');
+        if (vigorAtualEl){
+          vigorAtualEl.value = 1;
+          renderComputed();
+        }
+      }
+      refreshConditionEffects();
       scheduleSave();
     });
     condGrid.appendChild(item);
@@ -1320,6 +1427,7 @@
     var max = parseFloat(maxInput.value) || 0;
     atualInput.value = Math.round(ratio * max);
     checkVigorZero();
+    checkVigorRecovery();
     renderComputed();
   }
   function scrubFolego(ratio){
@@ -1695,7 +1803,7 @@
       var cb = item.querySelector("input");
       item.classList.toggle("checked", cb.checked);
     });
-    updateConditionVignettes();
+    refreshConditionEffects();
     document.querySelectorAll("#medal-grid .medal-card").forEach(function(card){
       var cb = card.querySelector("input");
       card.classList.toggle("active", cb.checked);
@@ -1860,7 +1968,7 @@
     armadurasList.setData([]);
     viaSkillsList.setData([]);
     document.querySelectorAll(".cond-item").forEach(function(item){ item.classList.remove("checked"); });
-    updateConditionVignettes();
+    refreshConditionEffects();
     document.querySelectorAll("#medal-grid .medal-card").forEach(function(card){ card.classList.remove("active"); });
     updateActiveMedals();
     updateSecretUI();
@@ -1876,7 +1984,7 @@
 
   // Init
   updateSecretUI();
-  updateConditionVignettes();
+  refreshConditionEffects();
   renderFadiga();
   renderSaturacao();
   renderPortrait();
