@@ -224,6 +224,37 @@
     box-shadow: 0 0 0 3px rgba(158,27,61,0.20);
   }
   input::placeholder, textarea::placeholder{ color: var(--text-faint); }
+  input:read-only{ color: var(--text-dim); cursor: default; }
+  input:read-only:focus{ border-color: var(--line); box-shadow: none; }
+
+  /* Setinhas de número customizadas (substituem as do navegador) */
+  input[type="number"]{ -moz-appearance: textfield; padding-right: 20px; }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button{
+    -webkit-appearance: none; margin: 0;
+  }
+  .number-stepper{ position: relative; display: inline-flex; width: 100%; }
+  .number-stepper input{ width: 100%; }
+  .stepper-arrows{
+    position: absolute; top: 2px; right: 2px; bottom: 2px; width: 16px;
+    display: flex; flex-direction: column; justify-content: center; gap: 2px;
+  }
+  .stepper-arrow{
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    background: transparent; border: none; padding: 0; margin: 0; cursor: pointer;
+  }
+  .stepper-arrow::before{ content: ""; width: 0; height: 0; }
+  .stepper-arrow-up::before{ border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 5px solid var(--text-faint); }
+  .stepper-arrow-down::before{ border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid var(--text-faint); }
+  .stepper-arrow:hover.stepper-arrow-up::before{ border-bottom-color: var(--steel); }
+  .stepper-arrow:hover.stepper-arrow-down::before{ border-top-color: var(--steel); }
+  .number-stepper input:read-only ~ .stepper-arrows{ display: none; }
+  .number-stepper input:read-only{ padding-right: 9px; }
+
+  /* Campos que só ficam editáveis no modo de edição (Vida Máxima, Atributos) */
+  .editable-lockable:not(:read-only){ border-color: var(--steel); box-shadow: 0 0 0 2px var(--steel-glow); }
+  #edit-mode-btn{ margin-left: auto; }
+  #edit-mode-btn.active{ border-color: var(--steel); color: var(--steel); background: rgba(147,179,186,0.10); }
   textarea{ resize: vertical; min-height: 64px; }
   select{ appearance: none; -webkit-appearance:none; background-image: linear-gradient(45deg, transparent 50%, var(--text-dim) 50%), linear-gradient(135deg, var(--text-dim) 50%, transparent 50%); background-position: calc(100% - 14px) calc(50% - 2px), calc(100% - 9px) calc(50% - 2px); background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; padding-right: 26px;}
   button{ font-family: var(--font-mono); cursor: pointer; }
@@ -511,7 +542,8 @@
   .attr-card{ background: var(--bg-inset); border: 1px solid var(--line); border-radius: var(--radius); padding: 9px 11px; cursor: pointer; transition: border-color .15s ease; }
   .attr-card:hover{ border-color: var(--crystal-3); }
   .attr-card .attr-name{ font-size: 12px; color: var(--text); display:flex; justify-content: space-between; align-items:center; margin-bottom: 4px;}
-  .attr-card .attr-name input{ width: 56px; text-align:center; padding: 4px; cursor: text; }
+  .attr-card .attr-name .number-stepper{ width: 62px; }
+  .attr-card .attr-name input{ text-align:center; padding: 4px 20px 4px 4px; cursor: text; }
   .attr-card .attr-desc{ font-size: 10px; color: var(--text-faint); }
 
   .equipped-weapon-info{ font-size: 11px; color: var(--text-dim); margin-top: 6px; min-height: 14px; }
@@ -750,6 +782,7 @@
     <button type="button" class="tab-btn" data-tab="inventario">Inventário</button>
     <button type="button" class="tab-btn" data-tab="conquistas">Conquistas</button>
     <button type="button" class="tab-btn" data-tab="artefatos" hidden>Artefatos</button>
+    <button type="button" class="ghost-btn" id="edit-mode-btn" title="Libera edição de Vida Máxima e Atributos">✎ Editar</button>
   </div>
 
   <div class="tab-panel" data-tab-panel="dossie">
@@ -763,7 +796,7 @@
             <div class="resource-nums">
               <input type="number" data-field="vigorAtual" value="6" />
               <span>/</span>
-              <input type="number" data-field="vigorMax" value="6" />
+              <input type="number" class="editable-lockable" id="vigor-max-input" data-field="vigorMax" value="6" readonly>
             </div>
             <div class="bar-track"><div class="bar-fill" id="bar-vigor" style="width:100%"></div></div>
           </div>
@@ -772,7 +805,7 @@
             <div class="resource-nums">
               <input type="number" data-field="folegoAtual" value="12" />
               <span>/</span>
-              <input type="number" data-field="folegoMax" value="12" />
+              <input type="number" data-field="folegoMax" value="12" readonly title="Fôlego máximo é fixo em 12">
             </div>
             <div class="bar-track"><div class="bar-fill" id="bar-folego" style="width:100%"></div></div>
           </div>
@@ -1081,7 +1114,8 @@
     card.title = "Clique para rolar 1d12 + " + a[1];
     card.innerHTML =
       '<div class="attr-name">' + a[1] +
-      '<input type="number" data-field="attr-' + a[0] + '" value="0" min="-1" max="5"></div>' +
+      '<input type="number" class="editable-lockable" data-field="attr-' + a[0] + '" value="0" min="-1" max="5" readonly>' +
+      '</div>' +
       '<div class="attr-desc">' + a[2] + '</div>';
     var attrInput = card.querySelector("input");
     card.addEventListener("click", function(e){
@@ -1090,6 +1124,58 @@
     });
     attrGrid.appendChild(card);
   });
+
+  // Setinhas de número customizadas
+  function attachNumberStepper(input){
+    if (!input || input.dataset.stepperReady) return;
+    input.dataset.stepperReady = "1";
+    var wrap = document.createElement("span");
+    wrap.className = "number-stepper";
+    input.parentNode.insertBefore(wrap, input);
+    wrap.appendChild(input);
+    var arrows = document.createElement("span");
+    arrows.className = "stepper-arrows";
+    var up = document.createElement("button");
+    up.type = "button"; up.className = "stepper-arrow stepper-arrow-up"; up.tabIndex = -1;
+    var down = document.createElement("button");
+    down.type = "button"; down.className = "stepper-arrow stepper-arrow-down"; down.tabIndex = -1;
+    arrows.appendChild(up);
+    arrows.appendChild(down);
+    wrap.appendChild(arrows);
+    function step(delta){
+      if (input.readOnly || input.disabled) return;
+      var val = parseFloat(input.value);
+      if (isNaN(val)) val = 0;
+      var next = val + delta;
+      if (input.min !== "" && !isNaN(parseFloat(input.min)) && next < parseFloat(input.min)) next = parseFloat(input.min);
+      if (input.max !== "" && !isNaN(parseFloat(input.max)) && next > parseFloat(input.max)) next = parseFloat(input.max);
+      input.value = next;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    up.addEventListener("click", function(e){ e.preventDefault(); step(1); });
+    down.addEventListener("click", function(e){ e.preventDefault(); step(-1); });
+  }
+  document.querySelectorAll(
+    '[data-field="vigorAtual"], [data-field="vigorMax"], [data-field="folegoAtual"], ' +
+    '[data-field^="attr-"], [data-field="moedaCinzeis"], [data-field="moedaChaves"], ' +
+    '[data-field="moedaMarcas"], [data-field="moedaPactos"], #input-nivel'
+  ).forEach(attachNumberStepper);
+
+  // Modo de edição: único botão que libera Vida Máxima e Atributos
+  var editModeBtn = document.getElementById("edit-mode-btn");
+  var editModeOn = false;
+  function setEditMode(on){
+    editModeOn = on;
+    document.querySelectorAll(".editable-lockable").forEach(function(el){ el.readOnly = !on; });
+    if (editModeBtn){
+      editModeBtn.classList.toggle("active", on);
+      editModeBtn.textContent = on ? "Concluir edição" : "✎ Editar";
+    }
+  }
+  if (editModeBtn){
+    editModeBtn.addEventListener("click", function(){ setEditMode(!editModeOn); });
+  }
 
   // Fadiga selector
   var fadigaRow = document.getElementById("fadiga-row");
@@ -2097,6 +2183,7 @@
     updateActiveMedals();
     updateSecretUI();
     revealSecretContent();
+    setEditMode(false);
     portraitHidden.value = "";
     renderPortrait();
     renderFadiga(); renderSaturacao(); renderComputed();
