@@ -379,17 +379,24 @@
     flex: 1 1 auto; display:flex; align-items:center; justify-content:center; min-width: 140px;
   }
   .roll-box{
-    border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--bg-inset);
-    padding: 8px 20px 12px; text-align:center; width: 160px;
+    background-color: var(--bg-inset);
+    background-image:
+      radial-gradient(circle 1.2px at 9px 9px, var(--line-strong) 99%, transparent 100%),
+      radial-gradient(circle 1.2px at calc(100% - 9px) 9px, var(--line-strong) 99%, transparent 100%),
+      radial-gradient(circle 1.2px at 9px calc(100% - 9px), var(--line-strong) 99%, transparent 100%),
+      radial-gradient(circle 1.2px at calc(100% - 9px) calc(100% - 9px), var(--line-strong) 99%, transparent 100%);
+    background-repeat: no-repeat;
+    border: 1px solid var(--line-strong); border-radius: var(--radius);
+    padding: 8px 20px 12px; text-align:center; width: 160px; height: 108px;
     box-shadow: 0 0 18px -8px rgba(201,38,66,0.0); transition: box-shadow .3s ease;
-    display: flex; flex-direction: column; align-items: center;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
   }
   .roll-box.rolled{ box-shadow: 0 0 18px -6px rgba(201,38,66,0.6); border-color: var(--crystal-3); }
   .roll-frame-label{
     font-size: 9px; text-transform: uppercase; letter-spacing: .16em; color: var(--text-faint);
     padding-bottom: 6px; margin-bottom: 8px; border-bottom: 1px dashed var(--line); width: 100%;
   }
-  .roll-result{ min-height: 52px; width: 100%; display:flex; flex-direction:column; justify-content:center; }
+  .roll-result{ height: 52px; width: 100%; display:flex; flex-direction:column; justify-content:center; }
   .roll-empty-hint{ font-size: 18px; color: var(--text-faint); line-height:1; }
   .roll-formula{ font-size: 10px; color: var(--text-faint); text-transform:uppercase; letter-spacing:.05em; margin-bottom:2px; }
   .roll-total{ font-family: var(--font-display); font-weight:600; font-size: 30px; color: var(--crystal-4); line-height:1; text-shadow: 0 0 14px rgba(201,38,66,0.5); }
@@ -499,6 +506,56 @@
     0%,100%{ box-shadow: 0 0 6px 0 rgba(255,71,87,0.4); }
     50%{ box-shadow: 0 0 14px 3px rgba(255,71,87,0.75); }
   }
+
+  /* ---------- Marcos (keystone leveling) — selos de cera ---------- */
+  .marcos-strip{
+    display:flex; align-items:center; justify-content:center; flex-wrap: wrap; gap: 16px;
+    padding: 22px 16px 26px; margin: 8px 0 2px;
+    background: linear-gradient(180deg, rgba(224,214,192,0.05), rgba(224,214,192,0.015));
+    border: 1px dashed var(--line-strong); border-radius: var(--radius);
+  }
+  .wax-seal{
+    width: 60px; height: 58px; flex: 0 0 auto; position: relative; cursor: pointer;
+    background: var(--bg-inset);
+    border: 1px dashed var(--line-strong);
+    border-radius: 47% 53% 50% 50% / 54% 49% 51% 46%;
+    transition: transform .15s ease, box-shadow .2s ease;
+  }
+  .wax-seal:hover{ transform: scale(1.06) rotate(-2deg); }
+  .wax-seal.filled{
+    border: none;
+    border-radius: 44% 56% 52% 48% / 57% 44% 56% 43%;
+    background:
+      radial-gradient(circle at 37% 30%, rgba(255,255,255,0.16), transparent 42%),
+      radial-gradient(circle at 58% 66%, #7c1327 0%, #5c0e1e 42%, #3d0a16 75%, #2a0710 100%);
+    box-shadow:
+      0 4px 8px rgba(0,0,0,0.5),
+      inset 0 -5px 9px rgba(0,0,0,0.45),
+      inset 0 3px 4px rgba(255,255,255,0.1);
+  }
+  .wax-seal.filled::after{
+    content: "";
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 47px; height: 47px; border-radius: 50%;
+    border: 1.5px solid rgba(15,4,7,0.5);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+  }
+  .wax-seal.filled::before{
+    content: "M";
+    position: absolute; inset: 0; display:flex; align-items:center; justify-content:center;
+    font-family: var(--font-display); font-weight: 700; font-size: 32px; line-height: 1;
+    color: rgba(15,4,7,0.62); text-shadow: 0 1px 0 rgba(255,255,255,0.12);
+  }
+  .marcos-ready{
+    margin-top: 10px; font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--brass); text-align: center;
+  }
+  .marcos-ready:not([hidden]){ animation: marcosready 2s ease-in-out infinite; }
+  @keyframes marcosready{
+    0%,100%{ opacity: 0.7; }
+    50%{ opacity: 1; text-shadow: 0 0 8px rgba(194,160,94,0.7); }
+  }
+
   .sat-readout{
     display:flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap;
   }
@@ -783,7 +840,8 @@
   <div class="tabs-nav">
     <button type="button" class="tab-btn active" data-tab="dossie">Dossiê</button>
     <button type="button" class="tab-btn" data-tab="inventario">Inventário</button>
-    <button type="button" class="tab-btn" data-tab="conquistas">Conquistas</button>
+    <button type="button" class="tab-btn" data-tab="conquistas" hidden>Conquistas</button>
+    <button type="button" class="tab-btn" data-tab="progressao">Progressão</button>
     <button type="button" class="tab-btn" data-tab="artefatos" hidden>Artefatos</button>
     <button type="button" class="ghost-btn" id="edit-mode-btn" title="Libera edição de Vida Máxima e Atributos">✎ Editar</button>
   </div>
@@ -793,6 +851,7 @@
       <!-- COLUNA A: RECURSOS / GERENCIAMENTO ATIVO -->
       <div class="stack">
         <div class="panel">
+          <h2>Status</h2>
           <button type="button" class="rivet-trigger" id="secret-trigger" aria-label=""></button>
           <div class="resource vigor">
             <label class="field-label">Vigor</label>
@@ -944,8 +1003,17 @@
 
   <div class="tab-panel" data-tab-panel="conquistas" hidden>
     <div class="panel">
-      <h2>Conquistas <span class="hint">clique para ativar/desativar</span></h2>
+      <h2>Conquistas <span class="hint">liberadas por código, dado pelo Mestre</span></h2>
       <div class="medal-grid" id="medal-grid"></div>
+    </div>
+  </div>
+
+  <div class="tab-panel" data-tab-panel="progressao" hidden>
+    <div class="panel">
+      <h2>Marcos <span class="hint">6 selos = sobe de nível na próxima Noite de Descanso</span></h2>
+      <input type="hidden" id="marcos-value" data-field="marcos" value="0">
+      <div class="marcos-strip" id="marcos-gauge"></div>
+      <div class="marcos-ready" id="marcos-ready" hidden>pronto para subir de nível</div>
     </div>
   </div>
 
@@ -993,12 +1061,12 @@
   ];
 
   var ACHIEVEMENTS = [
-    ["ach1","Conquista I"],
-    ["ach2","Conquista II"],
-    ["ach3","Conquista III"],
-    ["ach4","Conquista IV"],
-    ["ach5","Conquista V"],
-    ["ach6","Conquista VI"]
+    ["ach1","Conquista I","ach-1"],
+    ["ach2","Conquista II","ach-2"],
+    ["ach3","Conquista III","ach-3"],
+    ["ach4","Conquista IV","ach-4"],
+    ["ach5","Conquista V","ach-5"],
+    ["ach6","Conquista VI","ach-6"]
   ];
 
   var SATURACAO_BANDS = [
@@ -1028,8 +1096,17 @@
     "estagio3": "estagio-3",
     "estagio4": "estagio-4",
     "estagio5": "estagio-5",
-    "estagiofinal": "estagio-final"
+    "estagiofinal": "estagio-final",
+    "conquista1": "ach-1",
+    "conquista2": "ach-2",
+    "conquista3": "ach-3",
+    "conquista4": "ach-4",
+    "conquista5": "ach-5",
+    "conquista6": "ach-6"
   };
+  // Código-mestre (modo Mestre): libera a senha Minerva + todos os códigos do registro acima de uma vez.
+  // Para trocar, edite a string abaixo.
+  var MASTER_CODE = "zährim von schauder";
 
   function bandFor(v){
     for (var i=0;i<SATURACAO_BANDS.length;i++){ if (v <= SATURACAO_BANDS[i].max) return SATURACAO_BANDS[i]; }
@@ -1349,16 +1426,27 @@
     condGrid.appendChild(item);
   });
 
-  // Achievement medals
+  // Achievement medals — agora liberadas por código (dado pelo Mestre), não por clique livre
   var MEDAL_ICON_SVG = '<svg viewBox="0 0 24 24"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="currentColor"/></svg>';
   var medalGrid = document.getElementById("medal-grid");
   var medalActiveGrid = document.getElementById("medal-active-grid");
 
-  function updateActiveMedals(){
-    var actives = ACHIEVEMENTS.filter(function(a){
-      var cb = document.querySelector('[data-field="ach-' + a[0] + '"]');
-      return cb && cb.checked;
+  ACHIEVEMENTS.forEach(function(a){
+    var card = document.createElement("div");
+    card.className = "medal-card readonly";
+    card.dataset.achKey = a[2];
+    card.innerHTML =
+      '<div class="medal-icon">' + MEDAL_ICON_SVG + '</div>' +
+      '<div class="medal-label">' + a[1] + '</div>';
+    medalGrid.appendChild(card);
+  });
+
+  function renderMedals(){
+    ACHIEVEMENTS.forEach(function(a){
+      var card = medalGrid.querySelector('[data-ach-key="' + a[2] + '"]');
+      if (card) card.classList.toggle("active", isKeyUnlocked(a[2]));
     });
+    var actives = ACHIEVEMENTS.filter(function(a){ return isKeyUnlocked(a[2]); });
     medalActiveGrid.innerHTML = "";
     if (actives.length === 0){
       var e = document.createElement("div");
@@ -1374,23 +1462,6 @@
       medalActiveGrid.appendChild(card);
     });
   }
-
-  ACHIEVEMENTS.forEach(function(a){
-    var card = document.createElement("label");
-    card.className = "medal-card";
-    card.innerHTML =
-      '<input type="checkbox" data-field="ach-' + a[0] + '" hidden>' +
-      '<div class="medal-icon">' + MEDAL_ICON_SVG + '</div>' +
-      '<div class="medal-label">' + a[1] + '</div>';
-    var cb = card.querySelector("input");
-    cb.addEventListener("change", function(){
-      card.classList.toggle("active", cb.checked);
-      updateActiveMedals();
-      scheduleSave();
-    });
-    medalGrid.appendChild(card);
-  });
-  updateActiveMedals();
 
   // Segredo: efeitos e descrições da Saturação/Estágio só aparecem com a senha certa
   var loreUnlockedInput = document.getElementById("lore-unlocked");
@@ -1478,6 +1549,17 @@
         if (dossieBtn) dossieBtn.click();
       }
     }
+    var conquistasBtn = document.querySelector('.tab-btn[data-tab="conquistas"]');
+    var gmMode = isKeyUnlocked("modo-mestre");
+    if (conquistasBtn) conquistasBtn.hidden = !gmMode;
+    if (!gmMode){
+      var conquistasPanel = document.querySelector('[data-tab-panel="conquistas"]');
+      if (conquistasPanel && !conquistasPanel.hidden){
+        var dossieBtn2 = document.querySelector('.tab-btn[data-tab="dossie"]');
+        if (dossieBtn2) dossieBtn2.click();
+      }
+    }
+    renderMedals();
   }
   function flashCodeInput(status){
     if (!codeInput) return;
@@ -1490,6 +1572,20 @@
     if (!codeInput) return;
     var raw = (codeInput.value || "").trim().toLowerCase();
     if (!raw) return;
+    if (raw === MASTER_CODE){
+      loreUnlockedInput.value = "true";
+      var allKeys = Object.keys(CODE_REGISTRY).map(function(k){ return CODE_REGISTRY[k]; });
+      allKeys.push("modo-mestre");
+      unlockedCodesInput.value = JSON.stringify(allKeys);
+      updateSecretUI();
+      revealSecretContent();
+      renderSaturacao();
+      renderComputed();
+      scheduleSave();
+      codeInput.value = "";
+      flashCodeInput("ok");
+      return;
+    }
     var key = CODE_REGISTRY[raw];
     if (key){
       unlockKey(key);
@@ -1528,6 +1624,34 @@
       });
       satGauge.appendChild(shard);
     })(i);
+  }
+
+  // Marcos (keystone leveling) — selos de cera
+  var marcosGauge = document.getElementById("marcos-gauge");
+  var marcosHidden = document.getElementById("marcos-value");
+  for (var m=0;m<6;m++){
+    (function(idx){
+      var seal = document.createElement("div");
+      seal.className = "wax-seal";
+      seal.title = "Definir Marcos para " + (idx+1);
+      seal.addEventListener("click", function(){
+        var current = parseInt(marcosHidden.value || "0", 10);
+        var newVal = (current === idx + 1) ? idx : idx + 1;
+        marcosHidden.value = newVal;
+        renderMarcos();
+        scheduleSave();
+      });
+      marcosGauge.appendChild(seal);
+    })(m);
+  }
+  function renderMarcos(){
+    var val = Math.max(0, Math.min(6, parseInt(marcosHidden.value || "0", 10)));
+    marcosHidden.value = val;
+    Array.prototype.forEach.call(marcosGauge.children, function(seal, idx){
+      seal.classList.toggle("filled", idx < val);
+    });
+    var readyEl = document.getElementById("marcos-ready");
+    if (readyEl) readyEl.hidden = val < 6;
   }
   function renderSaturacao(){
     var val = Math.max(0, Math.min(12, parseInt(satHidden.value || "0", 10)));
@@ -2016,15 +2140,11 @@
       item.classList.toggle("checked", cb.checked);
     });
     refreshConditionEffects();
-    document.querySelectorAll("#medal-grid .medal-card").forEach(function(card){
-      var cb = card.querySelector("input");
-      card.classList.toggle("active", cb.checked);
-    });
-    updateActiveMedals();
     updateSecretUI();
     revealSecretContent();
     renderFadiga();
     renderSaturacao();
+    renderMarcos();
     renderPortrait();
     renderComputed();
   }
@@ -2066,15 +2186,15 @@
             setStatus("ficha carregada");
           }catch(e){
             setStatus("ficha nova");
-            renderFadiga(); renderSaturacao(); renderComputed();
+            renderFadiga(); renderSaturacao(); renderMarcos(); renderComputed();
           }
         } else {
           setStatus("ficha nova");
-          renderFadiga(); renderSaturacao(); renderComputed();
+          renderFadiga(); renderSaturacao(); renderMarcos(); renderComputed();
         }
       }).catch(function(){
         setStatus("ficha nova");
-        renderFadiga(); renderSaturacao(); renderComputed();
+        renderFadiga(); renderSaturacao(); renderMarcos(); renderComputed();
       });
       return;
     }
@@ -2085,11 +2205,11 @@
         setStatus("ficha carregada (deste navegador)");
       } else {
         setStatus("ficha nova");
-        renderFadiga(); renderSaturacao(); renderComputed();
+        renderFadiga(); renderSaturacao(); renderMarcos(); renderComputed();
       }
     }catch(e){
       setStatus("armazenamento indisponível nesta janela");
-      renderFadiga(); renderSaturacao(); renderComputed();
+      renderFadiga(); renderSaturacao(); renderMarcos(); renderComputed();
     }
   }
 
@@ -2175,6 +2295,7 @@
     document.querySelector('[data-field="folegoAtual"]').value = 12;
     document.querySelector('[data-field="folegoMax"]').value = 12;
     document.getElementById("saturacao-value").value = 0;
+    document.getElementById("marcos-value").value = 0;
     document.getElementById("fadiga-value").value = 0;
     document.getElementById("unlocked-codes").value = "[]";
     document.getElementById("lore-unlocked").value = "";
@@ -2184,14 +2305,12 @@
     viaSkillsList.setData([]);
     document.querySelectorAll(".cond-item").forEach(function(item){ item.classList.remove("checked"); });
     refreshConditionEffects();
-    document.querySelectorAll("#medal-grid .medal-card").forEach(function(card){ card.classList.remove("active"); });
-    updateActiveMedals();
     updateSecretUI();
     revealSecretContent();
     setEditMode(false);
     portraitHidden.value = "";
     renderPortrait();
-    renderFadiga(); renderSaturacao(); renderComputed();
+    renderFadiga(); renderSaturacao(); renderMarcos(); renderComputed();
     if (window.storage && typeof window.storage.set === "function"){
       window.storage.set(STORAGE_KEY, JSON.stringify(serialize()), false).then(function(){
         setStatus("ficha reiniciada");
@@ -2205,6 +2324,7 @@
   refreshConditionEffects();
   renderFadiga();
   renderSaturacao();
+  renderMarcos();
   renderPortrait();
   renderComputed();
   doLoad();
